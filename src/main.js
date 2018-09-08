@@ -131,6 +131,16 @@ raf(function(d) {
 // THE GAME!
 
 class Ship extends Mob {
+  u(d) {
+    super.u(d);
+    var D = 100 * d;
+    if (this.dx !== 0) {
+      this.dx += (-Math.sign(this.dx) * D);
+    }
+    if (this.dy !== 0) {
+      this.dy += (-Math.sign(this.dy) * D);
+    }
+  }
   k(){
     var P = 300;
     this.ay = 0;
