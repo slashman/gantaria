@@ -28,7 +28,8 @@ function typed(keyCode, callback){
 }
 
 const Renderer = {
-  render(c,ins,x,y,s,over) {
+  render(c,ins,x,y,s,over,flip) {
+    var xFlip = flip ? -1 : 1;
     c.fillStyle = over != undefined ? over : ins[0];
     var i = 1;
     drawlLine = false;
@@ -46,11 +47,12 @@ const Renderer = {
         case 'p':
           c.strokeStyle = c.fillStyle;
           c.beginPath();
-          c.moveTo(ins[i++]*s+x, ins[i++]*s+y);
+          c.moveTo(ins[i++]*s*xFlip+x, ins[i++]*s+y);
           co = ins[i++];
           drawlLine = true;
           break;
         case 'f':
+          c.closePath();
           c.fill();
           drawlLine = false;
           break;
@@ -67,7 +69,7 @@ const Renderer = {
         case 'v':
           c.save();
           c.beginPath();
-          c.translate(x+ins[i++]*s, y+ins[i++]*s);
+          c.translate(x+ins[i++]*s*xFlip, y+ins[i++]*s);
           c.scale(1, ins[i++]);
           c.arc(0, 0, ins[i++]*s, 0, 2 * Math.PI, false);
           c.restore(); // restore to original state
@@ -75,13 +77,18 @@ const Renderer = {
         case 'vh':
           c.save();
           c.beginPath();
-          c.translate(x+ins[i++]*s, y+ins[i++]*s);
+          c.translate(x+ins[i++]*s*xFlip, y+ins[i++]*s);
           c.scale(1, ins[i++]);
           c.arc(0, 0, ins[i++]*s, ins[i++], ins[i++], false);
           c.restore();
+          break;
+        case 'm':
+          co = ins[i++];
+          drawlLine = true;
+          break;
       }
       if (drawlLine) {
-        c.lineTo(co*s+x, ins[i++]*s+y);
+        c.lineTo(co*s*xFlip+x, ins[i++]*s+y);
       }
     };
   }
@@ -152,13 +159,17 @@ var mobs = [];
 var enemies = [];
 var canvas = document.querySelector('canvas');
 var ctx = canvas.getContext('2d');
+function renderMob(m, flip) {
+  Renderer.render(ctx,m.app,m.x,m.y,m.scale,m.blink?0:undefined,flip);
+}
 raf(function(d) {
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   layers.forEach(l => l.forEach(m => {
     m.k && m.k(); // TODO this is only for the ship, put it somewhere
     m.u(d);
-    m.app && Renderer.render(ctx,m.app,m.x,m.y,m.scale,m.blink?0:undefined);
+    renderMob(m);
+    renderMob(m, true);
     m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
     if (m.kob && m.y > canvas.height + m.size) { // Kill on bottom
       m.destroy();
@@ -307,17 +318,17 @@ const WH = '#ffffff';
 const RD = '#ff0000';
 
 const a = { // Appearances
-  // c - Circle radius, palette index
-  //ship: [WH,'c',20],
+  /*ship Half ovals
+    'o','#dddddd','vh',0,-6,2.2,2.2,Math.PI/2,Math.PI+Math.PI/2,'f',
+    'o','#000000','vh',0,-6,2,1.5,Math.PI/2,Math.PI+Math.PI/2,'f',
+  ]
+  */
   ship: [
-    WH,'p',-2,2,-4,4,-6,0,-4,-1,-2,-4,0,-4,0,2,'f',
-    'o',WH,'p',2,2,4,4,6,0,4,-1,2,-4,0,-4,0,2,'f', // Mirror
+    '#eeeeee','p',-2,2,-4,4,-6,0,-4,-1,-2,-4,0,-4,0,2,'f',
     'o','#0000ff','p',-3,3,-4,4,-6,4,-8,0,-6,-3,-4,-4,-5,-1,'f',
-    'o','#0000ff','p',3,3,4,4,6,4,8,0,6,-3,4,-4,5,-1,'f', // Mirror
     'o','#dddddd','v',0,-6,2.2,2.2,'f',
     'o','#888888','vh',0,1,2.5,2,Math.PI,2*Math.PI,'f',
     'o','#ff3333','p',0,1,-2.5,1,-2.5,2,-1.5,3,0,3,'f',
-    'o','#ff3333','p',0,1,2.5,1,2.5,2,1.5,3,0,3,'f', //Mirror
     'o','#000000','v',0,-6,2,1.5,'f',
     'o','#ff0000','vh',0,-6,2,1.5,0.5,Math.PI-0.5,'f',
   ],
