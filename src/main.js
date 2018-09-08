@@ -60,6 +60,25 @@ const Renderer = {
           break;
         case 'a':
           c.globalAlpha = ins[i++];
+          break;
+        case 'o':
+          c.fillStyle = over != undefined ? over : ins[i++];
+          break;
+        case 'v':
+          c.save();
+          c.beginPath();
+          c.translate(x+ins[i++]*s, y+ins[i++]*s);
+          c.scale(1, ins[i++]);
+          c.arc(0, 0, ins[i++]*s, 0, 2 * Math.PI, false);
+          c.restore(); // restore to original state
+          break;
+        case 'vh':
+          c.save();
+          c.beginPath();
+          c.translate(x+ins[i++]*s, y+ins[i++]*s);
+          c.scale(1, ins[i++]);
+          c.arc(0, 0, ins[i++]*s, ins[i++], ins[i++], false);
+          c.restore();
       }
       if (drawlLine) {
         c.lineTo(co*s+x, ins[i++]*s+y);
@@ -139,7 +158,7 @@ raf(function(d) {
   layers.forEach(l => l.forEach(m => {
     m.k && m.k(); // TODO this is only for the ship, put it somewhere
     m.u(d);
-    m.app && Renderer.render(ctx,m.app,m.x,m.y,1,m.blink?0:undefined);
+    m.app && Renderer.render(ctx,m.app,m.x,m.y,m.scale,m.blink?0:undefined);
     m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
     if (m.kob && m.y > canvas.height + m.size) { // Kill on bottom
       m.destroy();
@@ -230,6 +249,7 @@ class Ship extends Mob {
     b.size = 5;
     b.hits = 'e'; // Enemy
     b.kot = true;
+    b.scale = 1;
   }
   destroyed(m) {
     this.score += m.score;
@@ -279,6 +299,7 @@ class Star extends Mob {
     t.dy = rand.range(50, 100);
     t.size = size;
     t.kob = true;
+    t.scale = 1;
   }
 }
 
@@ -287,7 +308,19 @@ const RD = '#ff0000';
 
 const a = { // Appearances
   // c - Circle radius, palette index
-  ship: [WH,'c',20],
+  //ship: [WH,'c',20],
+  ship: [
+    WH,'p',-2,2,-4,4,-6,0,-4,-1,-2,-4,0,-4,0,2,'f',
+    'o',WH,'p',2,2,4,4,6,0,4,-1,2,-4,0,-4,0,2,'f', // Mirror
+    'o','#0000ff','p',-3,3,-4,4,-6,4,-8,0,-6,-3,-4,-4,-5,-1,'f',
+    'o','#0000ff','p',3,3,4,4,6,4,8,0,6,-3,4,-4,5,-1,'f', // Mirror
+    'o','#dddddd','v',0,-6,2.2,2.2,'f',
+    'o','#888888','vh',0,1,2.5,2,Math.PI,2*Math.PI,'f',
+    'o','#ff3333','p',0,1,-2.5,1,-2.5,2,-1.5,3,0,3,'f',
+    'o','#ff3333','p',0,1,2.5,1,2.5,2,1.5,3,0,3,'f', //Mirror
+    'o','#000000','v',0,-6,2,1.5,'f',
+    'o','#ff0000','vh',0,-6,2,1.5,0.5,Math.PI-0.5,'f',
+  ],
   star1: [WH,'c',1],
   star2: [WH,'c',2],
   star3: [WH,'c',3],
@@ -308,6 +341,7 @@ for (var i = 0; i < 50; i++) {
   t.dy = rand.range(50, 100);
   t.size = size;
   t.kob = true;
+  t.scale = 1;
 }
 
 var player = new Ship('ship', [layers[2]]);
@@ -316,6 +350,7 @@ player.y = 500;
 player.size = 20;
 player.score = 0;
 player.updateScoreArray();
+player.scale = 2;
 
 // Enemies
 for (var i = 0; i < 5; i++) {
@@ -326,4 +361,5 @@ for (var i = 0; i < 5; i++) {
   e.hits = 'p'; // Player
   e.size = 15;
   e.score = 100;
+  e.scale = 1;
 }
