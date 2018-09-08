@@ -125,6 +125,12 @@ raf(function(d) {
     m.u(d);
     m.app && Renderer.render(ctx,m);
     m.hits && (m.hits === 'p' ? collide(player, m) : enemies.forEach(e => collide(e, m)));
+    if (m.kob && m.y > canvas.height + m.size) { // Kill on bottom
+      m.destroy();
+    }
+    if (m.kot && m.y < -m.size) { // Kill on top
+      m.destroy();
+    }
   }))
 });
 
@@ -168,6 +174,7 @@ class Ship extends Mob {
     b.dy = -rand.range(550, 600);
     b.size = 5;
     b.hits = 'e'; // Enemy
+    b.kot = true;
   }
 }
 
@@ -188,6 +195,19 @@ class Enemy extends Mob {
   }
 }
 
+class Star extends Mob {
+  destroy(m) {
+    super.destroy();
+    // Create a new Star
+    var size = rand.range(1, 3);
+    var t = new Star('star'+size, [layers[0]]);
+    t.x = rand.range(0, 800);
+    t.y = -size;
+    t.dy = rand.range(50, 100);
+    t.size = size;
+    t.kob = true;
+  }
+}
 
 const a = { // Appearances
   // c - Circle radius, palette index
@@ -200,21 +220,14 @@ const a = { // Appearances
 }
 
 for (var i = 0; i < 50; i++) {
-  var t = new Mob('star'+rand.range(1, 3), [layers[0]]);
+  var size = rand.range(1, 3);
+  var t = new Star('star'+size, [layers[0]]);
   t.x = rand.range(0, 800);
   t.y = rand.range(0, 600);
   t.dy = rand.range(50, 100);
+  t.size = size;
+  t.kob = true;
 }
-
-// Replenish stars
-setInterval(() => { // TODO: Replace this with something from the game loop to avoid issues when not rendering
-  for (var i = 0; i < 50; i++) {
-    var t = new Mob('star'+rand.range(1, 3), [layers[0]]);
-    t.x = rand.range(0, 800);
-    t.y = -rand.range(0, 600);
-    t.dy = rand.range(50, 100);
-  }
-}, 3000);
 
 var player = new Ship('ship', [layers[2]]);
 player.x = 400;
