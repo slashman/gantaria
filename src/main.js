@@ -28,7 +28,10 @@ function typed(keyCode, callback){
 }
 
 const Renderer = {
-  render(c,ins,x,y,s,over,flip) {
+  render(c,ins,x,y,s,over,flip,scalex) {
+    var sx = s
+    if (scalex)
+      sx = s * scalex;
     var xFlip = flip ? -1 : 1;
     c.fillStyle = over != undefined ? over : ins[0];
     var i = 1;
@@ -47,7 +50,7 @@ const Renderer = {
         case 'p':
           c.strokeStyle = c.fillStyle;
           c.beginPath();
-          c.moveTo(ins[i++]*s*xFlip+x, ins[i++]*s+y);
+          c.moveTo(ins[i++]*sx*xFlip+x, ins[i++]*s+y);
           co = ins[i++];
           drawlLine = true;
           break;
@@ -69,7 +72,7 @@ const Renderer = {
         case 'v':
           c.save();
           c.beginPath();
-          c.translate(x+ins[i++]*s*xFlip, y+ins[i++]*s);
+          c.translate(x+ins[i++]*sx*xFlip, y+ins[i++]*s);
           c.scale(1, ins[i++]);
           c.arc(0, 0, ins[i++]*s, 0, 2 * Math.PI, false);
           c.restore(); // restore to original state
@@ -88,7 +91,7 @@ const Renderer = {
           break;
       }
       if (drawlLine) {
-        c.lineTo(co*s*xFlip+x, ins[i++]*s+y);
+        c.lineTo(co*sx*xFlip+x, ins[i++]*s+y);
       }
     };
   }
@@ -100,6 +103,7 @@ class Mob {
   constructor(app, lists) {
     this.app = a[app];
     this.dx = this.dy = this.ax = this.ay = 0;
+    this.turnScale = 0;
     lists.push(mobs);
     lists.forEach(l => l.push(this));
     this.lists = lists;
@@ -160,7 +164,11 @@ var enemies = [];
 var canvas = document.querySelector('canvas');
 var ctx = canvas.getContext('2d');
 function renderMob(m, flip) {
-  Renderer.render(ctx,m.app,m.x,m.y,m.scale,m.blink?0:undefined,flip);
+  var turnScale = 1;
+  if ((m.turnScale > 0 && flip) || (m.turnScale < 0 && !flip)) {
+    turnScale = 1 - Math.abs(m.turnScale);
+  } 
+  Renderer.render(ctx,m.app,m.x,m.y,m.scale,m.blink?0:undefined,flip,turnScale);
 }
 raf(function(d) {
   ctx.fillStyle = '#000000';
@@ -224,12 +232,21 @@ function renderUI(c) {
 class Ship extends Mob {
   u(d) {
     super.u(d);
+    // Damp
     var D = 100 * d;
     if (this.dx !== 0) {
       this.dx += (-Math.sign(this.dx) * D);
     }
     if (this.dy !== 0) {
       this.dy += (-Math.sign(this.dy) * D);
+    }
+    // Inertia
+    if (Math.abs(this.turnScale) < 0.01) {
+      this.turnScale = 0;
+    } else if (this.turnScale < 0) {
+      this.turnScale += 0.01;
+    } else if (this.turnScale > 0) {
+      this.turnScale -= 0.01;
     }
   }
   k(){
@@ -244,9 +261,17 @@ class Ship extends Mob {
     if (isDown(37)){
       this.flipped = true;
       this.ax = -P;
+      this.turnScale -= 0.02;
+      if (this.turnScale < -0.5) {
+        this.turnScale = -0.5;
+      }
     } else if (isDown(39)){
       this.flipped = true;
       this.ax = P;
+      this.turnScale += 0.02;
+      if (this.turnScale > 0.5) {
+        this.turnScale = 0.5;
+      }
     }
     if (isDown(32)) {
       this.fire();
