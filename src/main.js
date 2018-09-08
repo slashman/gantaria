@@ -27,28 +27,44 @@ function typed(keyCode, callback){
   typedCallbacks[keyCode] = callback;   
 }
 
-// Appearances
-const p = [ // palette
-  '#ffffff',
-  '#ff0000'
-]
-
 const Renderer = {
-  render(c,m) {
-    x = m.x;
-    y = m.y;
-    ins = m.app;
-    ins.split(":").forEach(i => {
-      t = i.split(',');
-      c.fillStyle = m.blink ? p[0] : p[parseInt(t[0])];
-      this[t[1]](c,x,y,t.slice(2));
-    });
-  },
-  c(c,x,y,t){
-    c.beginPath();
-    c.arc(x,y,t[0],0,Math.PI*2,true);
-    c.closePath();
-    c.fill();
+  render(c,ins,x,y,s,over) {
+    c.fillStyle = over != undefined ? over : ins[0];
+    var i = 1;
+    drawlLine = false;
+    c.globalAlpha = 1;
+    while(i < ins.length + 2) {
+      let co = ins[i++];
+      switch (co) {
+        case 'c':
+          c.beginPath();
+          c.arc(x,y,ins[i++]*s,0,Math.PI*2,true);
+          c.closePath();
+          c.fill();
+          drawlLine = false;
+          break;
+        case 'p':
+          c.strokeStyle = c.fillStyle;
+          c.beginPath();
+          c.moveTo(ins[i++]*s+x, ins[i++]*s+y);
+          co = ins[i++];
+          drawlLine = true;
+          break;
+        case 'f':
+          c.fill();
+          drawlLine = false;
+          break;
+        case 's':
+          c.stroke();
+          drawlLine = false;
+          break;
+        case 'a':
+          c.globalAlpha = ins[i++];
+      }
+      if (drawlLine) {
+        c.lineTo(co*s+x, ins[i++]*s+y);
+      }
+    };
   }
 }   
 
@@ -123,8 +139,8 @@ raf(function(d) {
   layers.forEach(l => l.forEach(m => {
     m.k && m.k(); // TODO this is only for the ship, put it somewhere
     m.u(d);
-    m.app && Renderer.render(ctx,m);
-    m.hits && (m.hits === 'p' ? collide(player, m) : enemies.forEach(e => collide(e, m)));
+    m.app && Renderer.render(ctx,m.app,m.x,m.y,1,m.blink?0:undefined);
+    m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
     if (m.kob && m.y > canvas.height + m.size) { // Kill on bottom
       m.destroy();
     }
@@ -132,9 +148,48 @@ raf(function(d) {
       m.destroy();
     }
   }))
+  renderUI(ctx);
 });
 
+const lcdmap = [
+  [1,1,1,0,1,1,1],
+  [0,0,1,0,0,1,0],
+  [1,0,1,1,1,0,1],
+  [1,0,1,1,0,1,1],
+  [0,1,1,1,0,1,0],
+  [1,1,0,1,0,1,1],
+  [1,1,0,1,1,1,1],
+  [1,0,1,0,0,1,0],
+  [1,1,1,1,1,1,1],
+  [1,1,1,1,0,1,1],
+]
+
+var NS = 3;
+// Score renderer
+function renderScore(c, x, y, score) {
+  score.forEach((d, i) => renderDigit(c, x + i * (NS * 12), y, d));
+}
+
+function renderDigit(c, x, y, digit) {
+  const x6 = 6 * NS + NS;
+  const x3 = 3 * NS + NS;
+  const f = Renderer.render.bind(Renderer);
+  const l = lcdmap[digit];
+  f(c, l[0]?a.n3:a.n2, x, y - x6, NS);
+  f(c, l[1]?a.n1:a.n0, x - x3, y - x3, NS);
+  f(c, l[2]?a.n1:a.n0, x + x3, y - x3, NS);
+  f(c, l[3]?a.n3:a.n2, x, y, NS);
+  f(c, l[4]?a.n1:a.n0, x - x3, y + x3, NS);
+  f(c, l[5]?a.n1:a.n0, x + x3, y + x3, NS);
+  f(c, l[6]?a.n3:a.n2, x, y + x6, NS); 
+}
+
 // THE GAME!
+
+function renderUI(c) {
+  Renderer.render(c,a.scoreBack,530,600,NS*2.5);
+  renderScore(c, 600, 550, player.scoreArray)
+}
 
 class Ship extends Mob {
   u(d) {
@@ -176,12 +231,29 @@ class Ship extends Mob {
     b.hits = 'e'; // Enemy
     b.kot = true;
   }
+  destroyed(m) {
+    this.score += m.score;
+    this.updateScoreArray();
+  }
+  updateScoreArray() {
+    this.scoreArray = [];
+    var ss = '0000000'+this.score;
+    ss = ss.substr(ss.length - 5)
+    for (var i = 0, len = ss.length; i < len; i += 1) {
+      this.scoreArray.push(+ss.charAt(i));
+    }
+  }
+  destroy() {
+    super.destroy();
+    this.dead = true;
+  }
 }
 
 class Enemy extends Mob {
   constructor(hp, app, lists) {
     super(app, lists);
     this.hp = hp;
+    this.kob = true; // TODO: Reverse logic for enemies flying upwards
   }
 
   collide(m) {
@@ -189,6 +261,7 @@ class Enemy extends Mob {
     this.blink = true;
     setTimeout(() => this.blink = false, 50);
     if (this.hp <= 0) {
+      player.destroyed(this);
       super.collide(m);
     }
     m.destroy();
@@ -209,14 +282,22 @@ class Star extends Mob {
   }
 }
 
+const WH = '#ffffff';
+const RD = '#ff0000';
+
 const a = { // Appearances
   // c - Circle radius, palette index
-  ship: "0,c,20",
-  star1: "0,c,1",
-  star2: "0,c,2",
-  star3: "0,c,3",
-  bullet: "1,c,4",
-  e1: "1,c,15"
+  ship: [WH,'c',20],
+  star1: [WH,'c',1],
+  star2: [WH,'c',2],
+  star3: [WH,'c',3],
+  bullet: [RD,'c',4],
+  e1: [RD,'c',15],
+  n0: ['#003300','p',-1,-2,0,-3,1,-2,1,2,0,3,-1,2,'f'], 
+  n1: ['#00ff00','p',-1,-2,0,-3,1,-2,1,2,0,3,-1,2,'f'], // TODO: Optimize, same as n0, different color
+  n2: ['#003300','p',-2,-1,-3,0,-2,1,2,1,3,0,2,-1,'f'],
+  n3: ['#00ff00','p',-2,-1,-3,0,-2,1,2,1,3,0,2,-1,'f'], // TODO: Optimize, same as n2, different color
+  scoreBack: ['#002200','a',0.7,'p',0,0,4,-12,40,-12,40,0,'f']
 }
 
 for (var i = 0; i < 50; i++) {
@@ -233,13 +314,16 @@ var player = new Ship('ship', [layers[2]]);
 player.x = 400;
 player.y = 500;
 player.size = 20;
+player.score = 0;
+player.updateScoreArray();
 
 // Enemies
 for (var i = 0; i < 5; i++) {
-  var e = new Enemy(200, 'e1', [enemies,layers[2]]);
+  var e = new Enemy(20, 'e1', [enemies,layers[2]]);
   e.x = 100 + i * 150;
   e.y = -100;
   e.dy = 50;
   e.hits = 'p'; // Player
   e.size = 15;
+  e.score = 100;
 }
