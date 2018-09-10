@@ -184,10 +184,11 @@ raf(function(d) {
     renderMob(m);
     renderMob(m, true);
     m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
-    if (m.kob && m.y > canvas.height + m.size) { // Kill on bottom
-      m.destroy();
-    }
-    if (m.kot && m.y < -m.size) { // Kill on top
+    if (
+      (m.kob && m.y > H + m.size) ||
+      (m.kot && m.y < -m.size) ||
+      (m.kor && m.x > W + m.size) ||
+      (m.kol && m.x < -m.size)) {
       m.destroy();
     }
   }))
@@ -228,11 +229,54 @@ function renderDigit(c, x, y, digit) {
 }
 
 // THE GAME!
+const W = canvas.width;
+const H = canvas.height;
 
 function renderUI(c) {
   Renderer.render(c,a.scoreBack,530,600,NS*2.5);
   renderScore(c, 600, 550, player.scoreArray)
 }
+
+var ef = { // Enemy Factory
+  i(){
+    this.defs={
+      d: {ap:'e1',hp:20,sp:50,sc:100,size:15}, // Crasher coming down in formation
+      c: {ap:'e1',hp:5,sp:200,sc:500,fp:true,size:15} // Cruises the screen shooting at player
+    }
+  },
+  b(id,x,y,dx,dy){
+    var d = this.defs[id];
+    var e = new Enemy(d.hp,d.ap,[enemies,layers[2]]);
+    e.x = x;
+    e.y = y;
+    e.dy = dy;
+    e.dx = dx;
+    e.score = d.sc;
+    e.reactionTime = d.rt || 2000;
+    e.fireAtPlayer = d.fp;
+    e.size = d.size;
+    e.hits = 'p'; // Player
+    e.scale = 1;
+    e.react();
+    return e;
+  },
+  c(id,l,y) {
+    var d = this.defs[id];
+    var x = l?(W+d.size):-d.size;
+    var e = this.b(id,x,y,d.sp*(l?-1:1),0);
+    e.kor = !l;
+    e.kol = l;
+  },
+  f(id,n,x,w) {
+    var d = this.defs[id];
+    var ix=x-w/2;
+    var is=w/n;
+    for (var i = 0; i < n; i++) {
+      this.b(id,ix+i*is,-100,0,d.sp)
+    }
+  }
+}
+ef.i();
 
 class Ship extends Mob {
   u(d) {
@@ -368,7 +412,7 @@ class Star extends Mob {
     // Create a new Star
     var size = rand.range(1, 3);
     var t = new Star('star'+size, [layers[0]]);
-    t.x = rand.range(0, 800);
+    t.x = rand.range(0, W);
     t.y = -size;
     t.dy = rand.range(50, 100);
     t.size = size;
@@ -410,8 +454,8 @@ const a = { // Appearances
 for (var i = 0; i < 50; i++) {
   var size = rand.range(1, 3);
   var t = new Star('star'+size, [layers[0]]);
-  t.x = rand.range(0, 800);
-  t.y = rand.range(0, 600);
+  t.x = rand.range(0, W);
+  t.y = rand.range(0, H);
   t.dy = rand.range(50, 100);
   t.size = size;
   t.kob = true;
@@ -419,24 +463,14 @@ for (var i = 0; i < 50; i++) {
 }
 
 var player = new Ship('ship', [players, layers[2]]);
-player.x = 400;
-player.y = 500;
+player.x = W/2;
+player.y = H-100;
 player.size = 20;
 player.score = 0;
 player.updateScoreArray();
 player.scale = 2;
 
-// Enemies
-for (var i = 0; i < 5; i++) {
-  var e = new Enemy(20, 'e1', [enemies,layers[2]]);
-  e.x = 100 + i * 150;
-  e.y = -100;
-  e.dy = 50;
-  e.hits = 'p'; // Player
-  e.size = 15;
-  e.score = 100;
-  e.scale = 1;
-  e.reactionTime = 2000;
-  e.fireAtPlayer = true;
-  e.react();
-}
+// Enemy Waves
+ef.f('d',5,W/2,600);
+ef.c('c',false,200); // Cruise left to right at 200 Y
+ef.c('c',true,400);
