@@ -107,6 +107,7 @@ class Mob {
     lists.push(mobs);
     lists.forEach(l => l.push(this));
     this.lists = lists;
+    this.ch = [];
   }
   // update
   u(d) {
@@ -120,6 +121,7 @@ class Mob {
     this.app = false;
     this.dead = true;
     this.lists.forEach(l => l.splice(l.indexOf(this), 1));
+    this.ch.forEach(c => c.destroy());
   }
 
   collide(m) {
@@ -182,7 +184,14 @@ raf(function(d) {
     m.k && m.k(); // TODO this is only for the ship, put it somewhere
     m.u(d);
     renderMob(m);
-    renderMob(m, true);
+    renderMob(m, true); // TODO: Only if m.flipped
+    /*if (true) {// Debug 
+      ctx.strokeStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.arc(m.x,m.y,m.size,0,Math.PI*2,true);
+      ctx.closePath();
+      ctx.stroke();
+    }*/
     m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
     if (
       (m.kob && m.y > H + m.size) ||
@@ -241,12 +250,18 @@ var ef = { // Enemy Factory
   i(){
     this.defs={
       d: {ap:'e1',hp:20,sp:50,sc:100,size:15}, // Crasher coming down in formation
-      c: {ap:'e1',hp:5,sp:200,sc:500,fp:true,size:15} // Cruises the screen shooting at player
+      c: {ap:'e1',hp:5,sp:200,sc:500,fp:true,size:15}, // Cruises the screen shooting at player
+      p: {ap:'platform',hp:1,sp:20,sc:0,size:80,scale:25,t:[[2,-1],[2,1]],transparent:true}, // Turret platform
+      t: {ap:'e1',hp:40,sp:0,sc:0,fp:true,size:15}, // Turret
     }
   },
   b(id,x,y,dx,dy){
     var d = this.defs[id];
-    var e = new Enemy(d.hp,d.ap,[enemies,layers[2]]);
+    const groups = [layers[d.t?1:2]];
+    if (!d.transparent) {
+      groups.push(enemies);
+    }
+    var e = new Enemy(d.hp,d.ap,groups);
     e.x = x;
     e.y = y;
     e.dy = dy;
@@ -255,19 +270,31 @@ var ef = { // Enemy Factory
     e.reactionTime = d.rt || 2000;
     e.fireAtPlayer = d.fp;
     e.size = d.size;
-    e.hits = 'p'; // Player
-    e.scale = 1;
+    if (!d.transparent) {
+      e.hits = 'p'; // Player
+    }
+    var s = e.scale = d.scale || 1;
+    if (d.t) { // Mounted turrets
+      d.t.forEach(t => {
+        e.ch.push(this.b('t',x+t[0]*s,y+t[1]*s,dx,dy));
+        e.ch.push(this.b('t',x+t[0]*-s,y+t[1]*s,dx,dy));
+      });
+    }
     e.react();
     return e;
   },
-  c(id,l,y) {
+  c(id,l,y) { // Cruising from one side to the other
     var d = this.defs[id];
     var x = l?(W+d.size):-d.size;
     var e = this.b(id,x,y,d.sp*(l?-1:1),0);
     e.kor = !l;
     e.kol = l;
   },
-  f(id,n,x,w) {
+  a(id,x) { // Coming from above
+    var d = this.defs[id];
+    this.b(id,x,-100,0,d.sp)
+  },
+  f(id,n,x,w) { // Horizontal Formation
     var d = this.defs[id];
     var ix=x-w/2;
     var is=w/n;
@@ -444,6 +471,9 @@ const a = { // Appearances
   star3: [WH,'c',3],
   bullet: [RD,'c',4],
   e1: [RD,'c',15],
+  platform: [
+    '#eeeeee','p',3,-4,3,2,1,4,0,4,0,-2,1,-2,3,-4,'f'
+  ],
   n0: ['#003300','p',-1,-2,0,-3,1,-2,1,2,0,3,-1,2,'f'], 
   n1: ['#00ff00','p',-1,-2,0,-3,1,-2,1,2,0,3,-1,2,'f'], // TODO: Optimize, same as n0, different color
   n2: ['#003300','p',-2,-1,-3,0,-2,1,2,1,3,0,2,-1,'f'],
@@ -474,3 +504,5 @@ player.scale = 2;
 ef.f('d',5,W/2,600);
 ef.c('c',false,200); // Cruise left to right at 200 Y
 ef.c('c',true,400);
+ef.a('p',200);
+setTimeout(()=>ef.a('p',600), 5000);
