@@ -118,6 +118,7 @@ class Mob {
 
   destroy() {
     this.app = false;
+    this.dead = true;
     this.lists.forEach(l => l.splice(l.indexOf(this), 1));
   }
 
@@ -150,9 +151,12 @@ function raf(fn) {
 
 
 // "Physics" (LOL)
+
+function dist(a,b) {
+  return Math.abs(a.x-b.x) + Math.abs(a.y-b.y);
+}
 function collide(a, b) {
-  var dist = Math.abs(a.x-b.x) + Math.abs(a.y-b.y);
-  if (dist < a.size + b.size) {
+  if (dist(a,b) < a.size + b.size) {
     a.collide(b);
   }
 }
@@ -161,6 +165,7 @@ function collide(a, b) {
 var layers = [[],[],[]];
 var mobs = [];
 var enemies = [];
+var players = [];
 var canvas = document.querySelector('canvas');
 var ctx = canvas.getContext('2d');
 function renderMob(m, flip) {
@@ -306,10 +311,43 @@ class Ship extends Mob {
 }
 
 class Enemy extends Mob {
-  constructor(hp, app, lists) {
+  constructor(hp, app, lists, reactionTime) {
     super(app, lists);
     this.hp = hp;
+    this.reactionTime = reactionTime;
     this.kob = true; // TODO: Reverse logic for enemies flying upwards
+  }
+
+  nearestPlayer() {
+    return players.length && players.sort((a,b)=>dist(a,this)-dist(b.this))[0];
+  }
+
+  react() {
+    if (this.dead)
+      return;
+    if (this.fireAtPlayer) {
+      this.fire();
+    }
+    setTimeout(()=>this.react(), this.reactionTime)
+  }
+
+  fire() {
+    var p = this.nearestPlayer();
+    if (!p) {
+      return;
+    }
+    var b = new Mob('bullet', [layers[1]]);
+    b.x = this.x;
+    b.y = this.y;
+    var angle = Math.atan2((p.y - this.y), (p.x - this.x));
+    var speed = rand.range(250, 300);
+    b.dx = Math.cos(angle) * speed;
+    b.dy = Math.sin(angle) * speed;
+    b.size = 5;
+    b.hits = 'p';
+    b.kob = true;
+    b.kot = true; // TODO: Kill anywhere outside screen
+    b.scale = 1;
   }
 
   collide(m) {
@@ -380,7 +418,7 @@ for (var i = 0; i < 50; i++) {
   t.scale = 1;
 }
 
-var player = new Ship('ship', [layers[2]]);
+var player = new Ship('ship', [players, layers[2]]);
 player.x = 400;
 player.y = 500;
 player.size = 20;
@@ -398,4 +436,7 @@ for (var i = 0; i < 5; i++) {
   e.size = 15;
   e.score = 100;
   e.scale = 1;
+  e.reactionTime = 2000;
+  e.fireAtPlayer = true;
+  e.react();
 }
