@@ -192,7 +192,9 @@ raf(function(d) {
       ctx.closePath();
       ctx.stroke();
     }*/
-    m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
+    const targets = m.hits == 'p' ? players : enemies;
+    //m.hits && (m.hits === 'p' ? !player.dead && collide(player, m) : enemies.forEach(e => collide(e, m)));
+    m.hits && targets.forEach(e => collide(e, m));
     if (
       (m.kob && m.y > H + m.size) ||
       (m.kot && m.y < -m.size) ||
@@ -242,8 +244,10 @@ const W = canvas.width;
 const H = canvas.height;
 
 function renderUI(c) {
+  Renderer.render(c,a.scoreBack,250,600,NS*2.5,undefined,true);
+  renderScore(c, 50, 550, p1.scoreArray)
   Renderer.render(c,a.scoreBack,530,600,NS*2.5);
-  renderScore(c, 600, 550, player.scoreArray)
+  renderScore(c, 600, 550, p2.scoreArray)
 }
 
 var ef = { // Enemy Factory
@@ -329,19 +333,19 @@ class Ship extends Mob {
     var P = 300;
     this.ay = 0;
     this.ax = 0;
-    if (isDown(38)){ // Rise
+    if (isDown(this.keys[0])){ // Rise
       this.ay = -P;
-    } else if (isDown(40)){ // Sink
+    } else if (isDown(this.keys[1])){ // Sink
       this.ay = P;
     } 
-    if (isDown(37)){
+    if (isDown(this.keys[2])){
       this.flipped = true;
       this.ax = -P;
       this.turnScale -= 0.02;
       if (this.turnScale < -0.5) {
         this.turnScale = -0.5;
       }
-    } else if (isDown(39)){
+    } else if (isDown(this.keys[3])){
       this.flipped = true;
       this.ax = P;
       this.turnScale += 0.02;
@@ -349,7 +353,7 @@ class Ship extends Mob {
         this.turnScale = 0.5;
       }
     }
-    if (isDown(32)) {
+    if (isDown(this.keys[4])) {
       this.fire();
     }
   }
@@ -390,7 +394,7 @@ class Enemy extends Mob {
   }
 
   nearestPlayer() {
-    return players.length && players.sort((a,b)=>dist(a,this)-dist(b.this))[0];
+    return players.length && players.sort((a,b)=>dist(a,this)-dist(b,this))[0];
   }
 
   react() {
@@ -426,7 +430,7 @@ class Enemy extends Mob {
     this.blink = true;
     setTimeout(() => this.blink = false, 50);
     if (this.hp <= 0) {
-      player.destroyed(this);
+      //player.destroyed(this); // Who shot the bullet?
       super.collide(m);
     }
     m.destroy();
@@ -466,6 +470,15 @@ const a = { // Appearances
     'o','#000000','v',0,-6,2,1.5,'f',
     'o','#ff0000','vh',0,-6,2,1.5,0.5,Math.PI-0.5,'f',
   ],
+  ship2: [ // Same as ship1, just different wing color
+    '#eeeeee','p',-2,2,-4,4,-6,0,-4,-1,-2,-4,0,-4,0,2,'f',
+    'o','#ff0000','p',-3,3,-4,4,-6,4,-8,0,-6,-3,-4,-4,-5,-1,'f', // here
+    'o','#dddddd','v',0,-6,2.2,2.2,'f',
+    'o','#888888','vh',0,1,2.5,2,Math.PI,2*Math.PI,'f',
+    'o','#ff3333','p',0,1,-2.5,1,-2.5,2,-1.5,3,0,3,'f',
+    'o','#000000','v',0,-6,2,1.5,'f',
+    'o','#ff0000','vh',0,-6,2,1.5,0.5,Math.PI-0.5,'f',
+  ],
   star1: [WH,'c',1],
   star2: [WH,'c',2],
   star3: [WH,'c',3],
@@ -492,17 +505,28 @@ for (var i = 0; i < 50; i++) {
   t.scale = 1;
 }
 
-var player = new Ship('ship', [players, layers[2]]);
-player.x = W/2;
-player.y = H-100;
-player.size = 20;
-player.score = 0;
-player.updateScoreArray();
-player.scale = 2;
+var p1 = new Ship('ship', [players, layers[2]]);
+p1.x = W*(1/4);
+p1.y = H-100;
+p1.size = 20;
+p1.score = 0;
+p1.updateScoreArray();
+p1.scale = 2;
+//p1.keys=[38,37,39,32];
+p1.keys=[87,83,65,68,32];//WASD+Space
+
+var p2 = new Ship('ship2', [players, layers[2]]);
+p2.x = W*(3/4);
+p2.y = H-100;
+p2.size = 20;
+p2.score = 0;
+p2.updateScoreArray();
+p2.scale = 2;
+p2.keys=[56,50,52,54,48]; //Numpad
 
 // Enemy Waves
 ef.f('d',5,W/2,600);
-ef.c('c',false,200); // Cruise left to right at 200 Y
-ef.c('c',true,400);
-ef.a('p',200);
-setTimeout(()=>ef.a('p',600), 5000);
+setTimeout(()=>ef.c('c',false,200), 2000);// Cruise left to right at 200 Y
+setTimeout(()=>ef.c('c',true,400), 6000);
+ef.a('p',200); // First platform
+setTimeout(()=>ef.a('p',600), 5000); // Second platform
