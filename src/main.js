@@ -13,16 +13,16 @@ sounds = sounds.map(a=>jsfxr(a)).map(j=>[...Array(BS).keys()].map(()=>new Audio(
 let playing = {};
 let curr = [0,0];
 function playSound(i){
-  /*if (playing[i]){
+  if (playing[i]){
     return;
   }
-  playing[i] = true;*/
+  playing[i] = true;
   var player = sounds[i][curr[i]++];
   if (curr[i] == BS){
     curr[i] = 0;
   }
   player.play();
-  //setTimeout(()=>playing[i]=false, 300);
+  setTimeout(()=>playing[i]=false, 30);
 }
 
 // Random
@@ -364,6 +364,11 @@ class Ship extends Mob {
     } else if (this.turnScale > 0) {
       this.turnScale -= 0.01;
     }
+    // BOundaries
+    if (this.x < 0) this.x = 0;
+    if (this.x > W) this.x = W;
+    if (this.y < 0) this.y = 0;
+    if (this.y > H) this.y = H;
   }
   k(){
     var P = 300;
@@ -448,6 +453,7 @@ class Enemy extends Mob {
     if (!p) {
       return;
     }
+    playSound(1);
     var b = new Mob('bullet', [layers[1]]);
     b.x = this.x;
     b.y = this.y;
