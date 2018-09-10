@@ -43,7 +43,6 @@ const Renderer = {
         case 'c':
           c.beginPath();
           c.arc(x,y,ins[i++]*s,0,Math.PI*2,true);
-          c.closePath();
           c.fill();
           drawlLine = false;
           break;
@@ -55,7 +54,6 @@ const Renderer = {
           drawlLine = true;
           break;
         case 'f':
-          c.closePath();
           c.fill();
           drawlLine = false;
           break;
@@ -126,6 +124,12 @@ class Mob {
 
   collide(m) {
     this.destroy();
+    for (var i = 0; i < 10; i++) {
+      var e = new Explosion(50);
+      e.x = this.x - (this.size / 2) + rand.range(0, this.size);
+      e.y = this.y - (this.size / 2) + rand.range(0, this.size);
+      sfx.push(e);
+    }
   }
 }
 
@@ -166,6 +170,7 @@ function collide(a, b) {
 // Game Loop
 var layers = [[],[],[]];
 var mobs = [];
+var sfx = [];
 var enemies = [];
 var players = [];
 var canvas = document.querySelector('canvas');
@@ -189,7 +194,6 @@ raf(function(d) {
       ctx.strokeStyle = '#00ff00';
       ctx.beginPath();
       ctx.arc(m.x,m.y,m.size,0,Math.PI*2,true);
-      ctx.closePath();
       ctx.stroke();
     }*/
     const targets = m.hits == 'p' ? players : enemies;
@@ -203,6 +207,10 @@ raf(function(d) {
       m.destroy();
     }
   }))
+  sfx.forEach(s => {
+    s.update(d);
+    s.render(ctx);
+  });
   renderUI(ctx);
 });
 
@@ -433,6 +441,10 @@ class Enemy extends Mob {
       //player.destroyed(this); // Who shot the bullet?
       super.collide(m);
     }
+    var e = new Explosion(20);
+    e.x = m.x;
+    e.y = m.y;
+    sfx.push(e);
     m.destroy();
   }
 }
@@ -449,6 +461,44 @@ class Star extends Mob {
     t.size = size;
     t.kob = true;
     t.scale = 1;
+  }
+}
+
+class Explosion {
+  constructor(s){
+    this.sf = s;
+    this.s0 = s / 5;
+    this.runTime = 0;
+  }
+  update(d){
+    this.runTime += d;
+  }
+  render(c){
+    var totalTime = 0.2;
+    var progress = this.runTime / totalTime;
+    if (progress > 1) {
+      sfx.splice(sfx.indexOf(this),1);
+      return;
+    }
+    var cut = 0.4;
+    if (progress < cut) {
+      // Growing ball of fire
+      var segmentProgress = progress / cut;
+      var size = this.s0 + segmentProgress * (this.sf-this.s0);
+      c.fillStyle = '#ffff00';
+      c.beginPath();
+      c.arc(this.x,this.y,size,0,Math.PI*2,true);
+      c.fill();
+    } else {
+      // Fading fire
+      var segmentProgress = (progress - cut) / (1 - cut);
+      var size = segmentProgress * this.sf;
+      c.fillStyle = '#ffff00';
+      c.beginPath();
+      c.arc(this.x,this.y,this.sf,0,Math.PI*2,true);
+      c.arc(this.x,this.y,size,0,Math.PI*2,false);
+      c.fill();
+    }
   }
 }
 
@@ -494,6 +544,7 @@ const a = { // Appearances
   scoreBack: ['#002200','a',0.7,'p',0,0,4,-12,40,-12,40,0,'f']
 }
 
+
 for (var i = 0; i < 50; i++) {
   var size = rand.range(1, 3);
   var t = new Star('star'+size, [layers[0]]);
@@ -512,7 +563,7 @@ p1.size = 20;
 p1.score = 0;
 p1.updateScoreArray();
 p1.scale = 2;
-//p1.keys=[38,37,39,32];
+//p1.keys=[38,37,39,32]; //Arrow keys
 p1.keys=[87,83,65,68,32];//WASD+Space
 
 var p2 = new Ship('ship2', [players, layers[2]]);
@@ -530,3 +581,8 @@ setTimeout(()=>ef.c('c',false,200), 2000);// Cruise left to right at 200 Y
 setTimeout(()=>ef.c('c',true,400), 6000);
 ef.a('p',200); // First platform
 setTimeout(()=>ef.a('p',600), 5000); // Second platform
+
+var e = new Explosion(50);
+e.x = 300;
+e.y = 300;
+sfx.push(e);
