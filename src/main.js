@@ -38,6 +38,32 @@ var rand = {
   }
 };
 
+// 1993 Park-Miller LCG
+function LCG(s) {
+  return function() {
+    s = Math.imul(16807, s) | 0 % 2147483647;
+    return (s & 2147483647) / 2147483648;
+  }
+}
+
+var seeded = LCG(13312);
+
+var rands = {
+  int: function(max) {
+    return seeded() * (max || 0xfffffff) | 0;
+  },
+  range: function(min, max) {
+    if (min === max) {
+      return min;
+    }
+    return this.int(max - min) + min;
+  },
+  b() {
+    return this.range(0,100)<50;
+  }
+};
+
+
 // Input
 var pressed = {};
 var typedCallbacks = {};
@@ -629,18 +655,17 @@ var wave = 1;
 setTimeout(()=>newWave(), 5000); // TODO: Replace with RAF-based timer
 
 function newWave(){
-  // TODO: Seeded RNG
-  var type = rand.range(0, 3);
-  var diff = 5; // Math.floor(wave/10)+1;
+  var type = rands.range(0, 3);
+  var diff = Math.floor(wave/10)+1;
   switch (type) {
     case 0: // Formation
-      ef.f('d',rand.range(1,diff),W/2,600);
+      ef.f('d',rands.range(1,diff),W/2,600);
       break;
     case 1: // Cruiser
-      ef.c('c',rand.b(),rand.range(100,H-100))
+      ef.c('c',rands.b(),rands.range(100,H-100))
       break;
     case 2: // Platform
-      ef.a('p',rand.range(100,W-100)); // First platform
+      ef.a('p',rands.range(100,W-100)); // First platform
       break;
   }
   wave++;
