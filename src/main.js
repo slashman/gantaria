@@ -290,7 +290,7 @@ var ef = { // Enemy Factory
   i(){
     this.defs={
       d: {ap:'e1',hp:20,sp:50,sc:100,size:15}, // Crasher coming down in formation
-      c: {ap:'e1',hp:5,sp:200,sc:500,fp:true,size:15}, // Cruises the screen shooting at player
+      c: {ap:'enemyFighter',hp:5,sp:200,sc:500,fp:true,size:15,scale:4}, // Cruises the screen shooting at player
       p: {ap:'platform',hp:1,sp:20,sc:0,size:80,scale:25,t:[[2,-1],[2,1]],transparent:true}, // Turret platform
       t: {ap:'e1',hp:40,sp:0,sc:0,fp:true,size:15}, // Turret
     }
@@ -565,11 +565,17 @@ const a = { // Appearances
     'o','#000000','v',0,-6,2,1.5,'f',
     'o','#ff0000','vh',0,-6,2,1.5,0.5,Math.PI-0.5,'f',
   ],
+  enemyFighter: [
+    '#33aa33','p',3,0,4,0,4,-6,2,-8,2,-6,3,-5,'f',
+    'o','#33ff33','p',2,0,2,-4,4,0,4,2,'f',
+    'o','#888888','v',0,0,1,3,'f',
+    'o','#000033','v',0,0,1,2,'f',
+  ],
   star1: [WH,'c',1],
   star2: [WH,'c',2],
   star3: [WH,'c',3],
   bullet: [RD,'c',4],
-  e1: [RD,'c',15],
+  e1: ['#888888','c',15,'o','#dd0000','c',5],
   platform: [
     '#eeeeee','p',3,-4,3,2,1,4,0,4,0,-2,1,-2,3,-4,'f'
   ],
@@ -617,11 +623,6 @@ setTimeout(()=>ef.c('c',false,200), 2000);// Cruise left to right at 200 Y
 setTimeout(()=>ef.c('c',true,400), 6000);
 ef.a('p',200); // First platform
 setTimeout(()=>ef.a('p',600), 5000); // Second platform
-
-var e = new Explosion(50);
-e.x = 300;
-e.y = 300;
-sfx.push(e);
 
 // Music
 /*function playMusic(){
