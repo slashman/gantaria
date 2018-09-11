@@ -38,7 +38,7 @@ var rand = {
   }
 };
 
-// 1993 Park-Miller LCG
+// 1993 Park-Miller LCG, https://gist.github.com/blixt/f17b47c62508be59987b
 function LCG(s) {
   return function() {
     s = Math.imul(16807, s) | 0 % 2147483647;
@@ -239,7 +239,18 @@ function renderMob(m, flip) {
   } 
   Renderer.render(ctx,m.app,m.x,m.y,m.scale,m.blink?0:undefined,flip,turnScale);
 }
+var timers = [];
 raf(function(d) {
+  if (timers.length) {
+    timers.forEach(t => {
+      t[1] -= d;
+      if (t[1] < 0) {
+        t[0]();
+        t.d = true;
+      }
+    })
+    timers = timers.filter(f => !f.d);
+  }
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   layers.forEach(l => l.forEach(m => {
@@ -324,7 +335,7 @@ var ef = { // Enemy Factory
       t: {ap:'e1',hp:40,sp:0,sc:200,fp:true,size:15}, // Turret
     }
   },
-  b(id,x,y,dx,dy){
+  b(id,x,y,dx,dy,lv=1){
     var d = this.defs[id];
     const groups = [layers[d.t?1:2]];
     if (!d.transparent) {
@@ -337,6 +348,10 @@ var ef = { // Enemy Factory
     e.dx = dx;
     e.score = d.sc;
     e.reactionTime = d.rt || 2000;
+    e.reactionTime -= lv * 200;
+    if (e.reactionTime < 200) {
+      e.reactionTime = 200;
+    }
     e.fireAtPlayer = d.fp;
     e.size = d.size;
     if (!d.transparent) {
@@ -475,7 +490,7 @@ class Enemy extends Mob {
     if (this.fireAtPlayer) {
       this.fire();
     }
-    setTimeout(()=>this.react(), this.reactionTime)
+    timers.push([()=>this.react(), this.reactionTime/1000]);
   }
 
   fire() {
@@ -652,9 +667,14 @@ p2.keys=[56,50,52,54,48]; //Numpad
 
 var wave = 1;
 // Generate a new wave every 5 seconds
-setTimeout(()=>newWave(), 5000); // TODO: Replace with RAF-based timer
+timers.push([()=>newWave(), 5]);
 
 function newWave(){
+  // Check at least one player alive
+  if (!players.filter(p=>!p.dead).length) {
+    console.log("Game over");
+    return;
+  }
   var type = rands.range(0, 3);
   var diff = Math.floor(wave/10)+1;
   switch (type) {
@@ -669,7 +689,7 @@ function newWave(){
       break;
   }
   wave++;
-  setTimeout(()=>newWave(), 5000); // TODO: Replace with RAF-based timer
+  timers.push([()=>newWave(), 5]);
 }
 
 // Music
