@@ -32,6 +32,9 @@ var rand = {
   },
   range: function(min, max) {
     return this.int(max - min) + min;
+  },
+  b() {
+    return this.range(0,100)<50;
   }
 };
 
@@ -292,7 +295,7 @@ var ef = { // Enemy Factory
       d: {ap:'e1',hp:20,sp:50,sc:100,size:15}, // Crasher coming down in formation
       c: {ap:'enemyFighter',hp:5,sp:200,sc:500,fp:true,size:15,scale:4}, // Cruises the screen shooting at player
       p: {ap:'platform',hp:1,sp:20,sc:0,size:80,scale:25,t:[[2,-1],[2,1]],transparent:true}, // Turret platform
-      t: {ap:'e1',hp:40,sp:0,sc:0,fp:true,size:15}, // Turret
+      t: {ap:'e1',hp:40,sp:0,sc:200,fp:true,size:15}, // Turret
     }
   },
   b(id,x,y,dx,dy){
@@ -407,6 +410,7 @@ class Ship extends Mob {
     b.hits = 'e'; // Enemy
     b.kot = true;
     b.scale = 1;
+    b.player = this;
     playSound(1);
   }
   destroyed(m) {
@@ -473,7 +477,7 @@ class Enemy extends Mob {
     this.blink = true;
     setTimeout(() => this.blink = false, 50);
     if (this.hp <= 0) {
-      //player.destroyed(this); // Who shot the bullet?
+      m.player.destroyed(this);
       super.collide(m);
     }
     playSound(0);
@@ -618,11 +622,30 @@ p2.scale = 2;
 p2.keys=[56,50,52,54,48]; //Numpad
 
 // Enemy Waves
-ef.f('d',5,W/2,600);
-setTimeout(()=>ef.c('c',false,200), 2000);// Cruise left to right at 200 Y
-setTimeout(()=>ef.c('c',true,400), 6000);
-ef.a('p',200); // First platform
-setTimeout(()=>ef.a('p',600), 5000); // Second platform
+
+
+var wave = 1;
+// Generate a new wave every 5 seconds
+setTimeout(()=>newWave(), 5000); // TODO: Replace with RAF-based timer
+
+function newWave(){
+  // TODO: Seeded RNG
+  var type = rand.range(0, 3);
+  var diff = 5; // Math.floor(wave/10)+1;
+  switch (type) {
+    case 0: // Formation
+      ef.f('d',rand.range(1,diff),W/2,600);
+      break;
+    case 1: // Cruiser
+      ef.c('c',rand.b(),rand.range(100,H-100))
+      break;
+    case 2: // Platform
+      ef.a('p',rand.range(100,W-100)); // First platform
+      break;
+  }
+  wave++;
+  setTimeout(()=>newWave(), 5000); // TODO: Replace with RAF-based timer
+}
 
 // Music
 /*function playMusic(){
