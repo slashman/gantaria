@@ -1,3 +1,738 @@
+/* -*- mode: javascript; tab-width: 4; indent-tabs-mode: nil; -*-
+*
+* Copyright (c) 2011-2013 Marcus Geelnard
+*
+* This software is provided 'as-is', without any express or implied
+* warranty. In no event will the authors be held liable for any damages
+* arising from the use of this software.
+*
+* Permission is granted to anyone to use this software for any purpose,
+* including commercial applications, and to alter it and redistribute it
+* freely, subject to the following restrictions:
+*
+* 1. The origin of this software must not be misrepresented; you must not
+*    claim that you wrote the original software. If you use this software
+*    in a product, an acknowledgment in the product documentation would be
+*    appreciated but is not required.
+*
+* 2. Altered source versions must be plainly marked as such, and must not be
+*    misrepresented as being the original software.
+*
+* 3. This notice may not be removed or altered from any source
+*    distribution.
+*
+*/
+
+var CPlayer = function() {
+
+    //--------------------------------------------------------------------------
+    // Private methods
+    //--------------------------------------------------------------------------
+
+    // Oscillators
+    var osc_sin = function (value) {
+        return Math.sin(value * 6.283184);
+    };
+
+    var osc_saw = function (value) {
+        return 2 * (value % 1) - 1;
+    };
+
+    var osc_square = function (value) {
+        return (value % 1) < 0.5 ? 1 : -1;
+    };
+
+    var osc_tri = function (value) {
+        var v2 = (value % 1) * 4;
+        if(v2 < 2) return v2 - 1;
+        return 3 - v2;
+    };
+
+    var getnotefreq = function (n) {
+        // 174.61.. / 44100 = 0.003959503758 (F3)
+        return 0.003959503758 * Math.pow(2, (n - 128) / 12);
+    };
+
+    var createNote = function (instr, n, rowLen) {
+        var osc1 = mOscillators[instr.i[0]],
+            o1vol = instr.i[1],
+            o1xenv = instr.i[3],
+            osc2 = mOscillators[instr.i[4]],
+            o2vol = instr.i[5],
+            o2xenv = instr.i[8],
+            noiseVol = instr.i[9],
+            attack = instr.i[10] * instr.i[10] * 4,
+            sustain = instr.i[11] * instr.i[11] * 4,
+            release = instr.i[12] * instr.i[12] * 4,
+            releaseInv = 1 / release,
+            arp = instr.i[13],
+            arpInterval = rowLen * Math.pow(2, 2 - instr.i[14]);
+
+        var noteBuf = new Int32Array(attack + sustain + release);
+
+        // Re-trig oscillators
+        var c1 = 0, c2 = 0;
+
+        // Local variables.
+        var j, j2, e, t, rsample, o1t, o2t;
+
+        // Generate one note (attack + sustain + release)
+        for (j = 0, j2 = 0; j < attack + sustain + release; j++, j2++) {
+            if (j2 >= 0) {
+                // Switch arpeggio note.
+                arp = (arp >> 8) | ((arp & 255) << 4);
+                j2 -= arpInterval;
+
+                // Calculate note frequencies for the oscillators
+                o1t = getnotefreq(n + (arp & 15) + instr.i[2] - 128);
+                o2t = getnotefreq(n + (arp & 15) + instr.i[6] - 128) * (1 + 0.0008 * instr.i[7]);
+            }
+
+            // Envelope
+            e = 1;
+            if (j < attack) {
+                e = j / attack;
+            } else if (j >= attack + sustain) {
+                e -= (j - attack - sustain) * releaseInv;
+            }
+
+            // Oscillator 1
+            t = o1t;
+            if (o1xenv) {
+                t *= e * e;
+            }
+            c1 += t;
+            rsample = osc1(c1) * o1vol;
+
+            // Oscillator 2
+            t = o2t;
+            if (o2xenv) {
+                t *= e * e;
+            }
+            c2 += t;
+            rsample += osc2(c2) * o2vol;
+
+            // Noise oscillator
+            if (noiseVol) {
+                rsample += (2 * Math.random() - 1) * noiseVol;
+            }
+
+            // Add to (mono) channel buffer
+            noteBuf[j] = (80 * rsample * e) | 0;
+        }
+
+        return noteBuf;
+    };
+
+
+    //--------------------------------------------------------------------------
+    // Private members
+    //--------------------------------------------------------------------------
+
+    // Array of oscillator functions
+    var mOscillators = [
+        osc_sin,
+        osc_square,
+        osc_saw,
+        osc_tri
+    ];
+
+    // Private variables set up by init()
+    var mSong, mLastRow, mCurrentCol, mNumWords, mMixBuf;
+
+
+    //--------------------------------------------------------------------------
+    // Initialization
+    //--------------------------------------------------------------------------
+
+    this.init = function (song) {
+        // Define the song
+        mSong = song;
+
+        // Init iteration state variables
+        mLastRow = song.endPattern;
+        mCurrentCol = 0;
+
+        // Prepare song info
+        mNumWords =  song.rowLen * song.patternLen * (mLastRow + 1) * 2;
+
+        // Create work buffer (initially cleared)
+        mMixBuf = new Int32Array(mNumWords);
+    };
+
+
+    //--------------------------------------------------------------------------
+    // Public methods
+    //--------------------------------------------------------------------------
+
+    // Generate audio data for a single track
+    this.generate = function () {
+        // Local variables
+        var i, j, b, p, row, col, n, cp,
+            k, t, lfor, e, x, rsample, rowStartSample, f, da;
+
+        // Put performance critical items in local variables
+        var chnBuf = new Int32Array(mNumWords),
+            instr = mSong.songData[mCurrentCol],
+            rowLen = mSong.rowLen,
+            patternLen = mSong.patternLen;
+
+        // Clear effect state
+        var low = 0, band = 0, high;
+        var lsample, filterActive = false;
+
+        // Clear note cache.
+        var noteCache = [];
+
+         // Patterns
+         for (p = 0; p <= mLastRow; ++p) {
+            cp = instr.p[p];
+
+            // Pattern rows
+            for (row = 0; row < patternLen; ++row) {
+                // Execute effect command.
+                var cmdNo = cp ? instr.c[cp - 1].f[row] : 0;
+                if (cmdNo) {
+                    instr.i[cmdNo - 1] = instr.c[cp - 1].f[row + patternLen] || 0;
+
+                    // Clear the note cache since the instrument has changed.
+                    if (cmdNo < 16) {
+                        noteCache = [];
+                    }
+                }
+
+                // Put performance critical instrument properties in local variables
+                var oscLFO = mOscillators[instr.i[15]],
+                    lfoAmt = instr.i[16] / 512,
+                    lfoFreq = Math.pow(2, instr.i[17] - 9) / rowLen,
+                    fxLFO = instr.i[18],
+                    fxFilter = instr.i[19],
+                    fxFreq = instr.i[20] * 43.23529 * 3.141592 / 44100,
+                    q = 1 - instr.i[21] / 255,
+                    dist = instr.i[22] * 1e-5,
+                    drive = instr.i[23] / 32,
+                    panAmt = instr.i[24] / 512,
+                    panFreq = 6.283184 * Math.pow(2, instr.i[25] - 9) / rowLen,
+                    dlyAmt = instr.i[26] / 255,
+                    dly = instr.i[27] * rowLen & ~1;  // Must be an even number
+
+                // Calculate start sample number for this row in the pattern
+                rowStartSample = (p * patternLen + row) * rowLen;
+
+                // Generate notes for this pattern row
+                for (col = 0; col < 4; ++col) {
+                    n = cp ? instr.c[cp - 1].n[row + col * patternLen] : 0;
+                    if (n) {
+                        if (!noteCache[n]) {
+                            noteCache[n] = createNote(instr, n, rowLen);
+                        }
+
+                        // Copy note from the note cache
+                        var noteBuf = noteCache[n];
+                        for (j = 0, i = rowStartSample * 2; j < noteBuf.length; j++, i += 2) {
+                          chnBuf[i] += noteBuf[j];
+                        }
+                    }
+                }
+
+                // Perform effects for this pattern row
+                for (j = 0; j < rowLen; j++) {
+                    // Dry mono-sample
+                    k = (rowStartSample + j) * 2;
+                    rsample = chnBuf[k];
+
+                    // We only do effects if we have some sound input
+                    if (rsample || filterActive) {
+                        // State variable filter
+                        f = fxFreq;
+                        if (fxLFO) {
+                            f *= oscLFO(lfoFreq * k) * lfoAmt + 0.5;
+                        }
+                        f = 1.5 * Math.sin(f);
+                        low += f * band;
+                        high = q * (rsample - band) - low;
+                        band += f * high;
+                        rsample = fxFilter == 3 ? band : fxFilter == 1 ? high : low;
+
+                        // Distortion
+                        if (dist) {
+                            rsample *= dist;
+                            rsample = rsample < 1 ? rsample > -1 ? osc_sin(rsample*.25) : -1 : 1;
+                            rsample /= dist;
+                        }
+
+                        // Drive
+                        rsample *= drive;
+
+                        // Is the filter active (i.e. still audiable)?
+                        filterActive = rsample * rsample > 1e-5;
+
+                        // Panning
+                        t = Math.sin(panFreq * k) * panAmt + 0.5;
+                        lsample = rsample * (1 - t);
+                        rsample *= t;
+                    } else {
+                        lsample = 0;
+                    }
+
+                    // Delay is always done, since it does not need sound input
+                    if (k >= dly) {
+                        // Left channel = left + right[-p] * t
+                        lsample += chnBuf[k-dly+1] * dlyAmt;
+
+                        // Right channel = right + left[-p] * t
+                        rsample += chnBuf[k-dly] * dlyAmt;
+                    }
+
+                    // Store in stereo channel buffer (needed for the delay effect)
+                    chnBuf[k] = lsample | 0;
+                    chnBuf[k+1] = rsample | 0;
+
+                    // ...and add to stereo mix buffer
+                    mMixBuf[k] += lsample | 0;
+                    mMixBuf[k+1] += rsample | 0;
+                }
+            }
+        }
+
+        // Next iteration. Return progress (1.0 == done!).
+        mCurrentCol++;
+        return mCurrentCol / mSong.numChannels;
+    };
+
+    // Create a WAVE formatted Uint8Array from the generated audio data
+    this.createWave = function() {
+        // Create WAVE header
+        var headerLen = 44;
+        var l1 = headerLen + mNumWords * 2 - 8;
+        var l2 = l1 - 36;
+        var wave = new Uint8Array(headerLen + mNumWords * 2);
+        wave.set(
+            [82,73,70,70,
+             l1 & 255,(l1 >> 8) & 255,(l1 >> 16) & 255,(l1 >> 24) & 255,
+             87,65,86,69,102,109,116,32,16,0,0,0,1,0,2,0,
+             68,172,0,0,16,177,2,0,4,0,16,0,100,97,116,97,
+             l2 & 255,(l2 >> 8) & 255,(l2 >> 16) & 255,(l2 >> 24) & 255]
+        );
+
+        // Append actual wave data
+        for (var i = 0, idx = headerLen; i < mNumWords; ++i) {
+            // Note: We clamp here
+            var y = mMixBuf[i];
+            y = y < -32767 ? -32767 : (y > 32767 ? 32767 : y);
+            wave[idx++] = y & 255;
+            wave[idx++] = (y >> 8) & 255;
+        }
+
+        // Return the WAVE formatted typed array
+        return wave;
+    };
+
+    // Get n samples of wave data at time t [s]. Wave data in range [-2,2].
+    this.getData = function(t, n) {
+        var i = 2 * Math.floor(t * 44100);
+        var d = new Array(n);
+        for (var j = 0; j < 2*n; j += 1) {
+            var k = i + j;
+            d[j] = t > 0 && k < mMixBuf.length ? mMixBuf[k] / 32768 : 0;
+        }
+        return d;
+    };
+};
+
+    // This music has been exported by SoundBox. You can use it with
+    // http://sb.bitsnbites.eu/player-small.js in your own product.
+
+    // See http://sb.bitsnbites.eu/demo.html for an example of how to
+    // use it in a demo.
+
+    // Song data
+    var song = {
+      songData: [
+        { // Instrument 0
+          i: [
+          2, // OSC1_WAVEFORM
+          96, // OSC1_VOL
+          116, // OSC1_SEMI
+          0, // OSC1_XENV
+          1, // OSC2_WAVEFORM
+          192, // OSC2_VOL
+          116, // OSC2_SEMI
+          8, // OSC2_DETUNE
+          0, // OSC2_XENV
+          0, // NOISE_VOL
+          15, // ENV_ATTACK
+          0, // ENV_SUSTAIN
+          35, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          0, // LFO_WAVEFORM
+          53, // LFO_AMT
+          3, // LFO_FREQ
+          1, // LFO_FX_FREQ
+          2, // FX_FILTER
+          70, // FX_FREQ
+          183, // FX_RESONANCE
+          53, // FX_DIST
+          56, // FX_DRIVE
+          136, // FX_PAN_AMT
+          3, // FX_PAN_FREQ
+          131, // FX_DELAY_AMT
+          4 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [6,6,2,7,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,4,,,5,1,1,2,3],
+          // Columns
+          c: [
+            {n: [147,152,150,154,152,150,149,152,147,152,150,154,152,150,149,152,147,152,150,154,152,150,149,152,147,152,150,154,152,150,149,152],
+             f: [13,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,43]},
+            {n: [150,155,153,157,155,153,152,155,150,155,153,157,155,153,152,155,150,155,153,157,155,153,152,155,150,155,153,157,155,153,152,155],
+             f: []},
+            {n: [145,150,148,152,150,148,147,150,145,150,148,152,150,148,147,150,145,150,148,152,150,148,147,150,145,150,148,152,150,148,147,150],
+             f: []},
+            {n: [135,,123,,135,,123],
+             f: []},
+            {n: [,,,,,,,,,,,,,,,,,,,,,,,,,,,,138,148,135,152],
+             f: []},
+            {n: [147,152,150,154,152,150,149,152,147,152,150,154,152,150,149,152,147,152,150,154,152,150,149,152,147,152,150,154,152,150,149,152],
+             f: [11,13,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,15,35]},
+            {n: [145,150,148,152,150,148,147,150,145,150,148,152,150,148,147,150,145,150,148,152,150,148,147,150,145,150,148,152,150,148,147,150],
+             f: [11,,13,,11,,,,11,,,,11,,13,,11,,,,11,,13,,11,,,13,,,,13,13,,36,,12,,,,9,,,,5,,37,,3,,,,1,,39,,,,,40,,,,41]}
+          ]
+        },
+        { // Instrument 1
+          i: [
+          3, // OSC1_WAVEFORM
+          192, // OSC1_VOL
+          116, // OSC1_SEMI
+          0, // OSC1_XENV
+          3, // OSC2_WAVEFORM
+          192, // OSC2_VOL
+          128, // OSC2_SEMI
+          2, // OSC2_DETUNE
+          0, // OSC2_XENV
+          0, // NOISE_VOL
+          118, // ENV_ATTACK
+          40, // ENV_SUSTAIN
+          155, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          2, // LFO_WAVEFORM
+          70, // LFO_AMT
+          5, // LFO_FREQ
+          1, // LFO_FX_FREQ
+          2, // FX_FILTER
+          11, // FX_FREQ
+          168, // FX_RESONANCE
+          17, // FX_DIST
+          51, // FX_DRIVE
+          107, // FX_PAN_AMT
+          3, // FX_PAN_FREQ
+          131, // FX_DELAY_AMT
+          7 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,1,1,2,3,1,1,2,4,1,1,2,4,1,1,2,4,5,,6,,1,1,2,4,1,1],
+          // Columns
+          c: [
+            {n: [123,135],
+             f: []},
+            {n: [126,138],
+             f: []},
+            {n: [121,133],
+             f: []},
+            {n: [121,133,,,,,,,,,,,,,,,145,150],
+             f: []},
+            {n: [135],
+             f: []},
+            {n: [126],
+             f: []}
+          ]
+        },
+        { // Instrument 2
+          i: [
+          2, // OSC1_WAVEFORM
+          96, // OSC1_VOL
+          140, // OSC1_SEMI
+          0, // OSC1_XENV
+          2, // OSC2_WAVEFORM
+          96, // OSC2_VOL
+          128, // OSC2_SEMI
+          4, // OSC2_DETUNE
+          0, // OSC2_XENV
+          20, // NOISE_VOL
+          7, // ENV_ATTACK
+          7, // ENV_SUSTAIN
+          60, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          0, // LFO_WAVEFORM
+          84, // LFO_AMT
+          6, // LFO_FREQ
+          1, // LFO_FX_FREQ
+          3, // FX_FILTER
+          21, // FX_FREQ
+          186, // FX_RESONANCE
+          7, // FX_DIST
+          76, // FX_DRIVE
+          199, // FX_PAN_AMT
+          4, // FX_PAN_FREQ
+          97, // FX_DELAY_AMT
+          4 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1],
+          // Columns
+          c: [
+            {n: [123,,,123,,,123,,,123,123,,135,,123],
+             f: []},
+            {n: [126,,,126,,,126,,,126,126,,138,,126],
+             f: []},
+            {n: [121,,,121,,,121,,,121,121,,133,,121,,,,,,,,,,133,,145,,157,,169],
+             f: []}
+          ]
+        },
+        { // Instrument 3
+          i: [
+          0, // OSC1_WAVEFORM
+          255, // OSC1_VOL
+          116, // OSC1_SEMI
+          1, // OSC1_XENV
+          0, // OSC2_WAVEFORM
+          255, // OSC2_VOL
+          116, // OSC2_SEMI
+          0, // OSC2_DETUNE
+          1, // OSC2_XENV
+          0, // NOISE_VOL
+          4, // ENV_ATTACK
+          6, // ENV_SUSTAIN
+          35, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          0, // LFO_WAVEFORM
+          0, // LFO_AMT
+          0, // LFO_FREQ
+          0, // LFO_FX_FREQ
+          2, // FX_FILTER
+          14, // FX_FREQ
+          1, // FX_RESONANCE
+          1, // FX_DIST
+          32, // FX_DRIVE
+          24, // FX_PAN_AMT
+          5, // FX_PAN_FREQ
+          0, // FX_DELAY_AMT
+          0 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,,,,3,1,2,1,2,,,,3,1,2,1,2,1,2,1,2,1,2,1,2,1],
+          // Columns
+          c: [
+            {n: [147,,,,147,,,,147,,,,147,,,,147,,,,147,,,,147,,,,147],
+             f: []},
+            {n: [147,,,,147,,,,147,,,,147,,,,147,,,,147,,,,147,,147,,,,147],
+             f: []},
+            {n: [,,,,,,,,,,,,,,,,,,,,,,,,147,,147,,,,147],
+             f: []}
+          ]
+        },
+        { // Instrument 4
+          i: [
+          0, // OSC1_WAVEFORM
+          0, // OSC1_VOL
+          92, // OSC1_SEMI
+          0, // OSC1_XENV
+          0, // OSC2_WAVEFORM
+          0, // OSC2_VOL
+          92, // OSC2_SEMI
+          0, // OSC2_DETUNE
+          0, // OSC2_XENV
+          60, // NOISE_VOL
+          4, // ENV_ATTACK
+          7, // ENV_SUSTAIN
+          29, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          0, // LFO_WAVEFORM
+          0, // LFO_AMT
+          0, // LFO_FREQ
+          0, // LFO_FX_FREQ
+          1, // FX_FILTER
+          232, // FX_FREQ
+          203, // FX_RESONANCE
+          0, // FX_DIST
+          32, // FX_DRIVE
+          108, // FX_PAN_AMT
+          5, // FX_PAN_FREQ
+          7, // FX_DELAY_AMT
+          4 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,,,,,1,1,1,1,,,,2,1,1,1,1,1,1,1,1,1,1,1,1],
+          // Columns
+          c: [
+            {n: [,,147,147,,,147,,,,147,147,,,147,,,,147,147,,,147,,,,147,147,,147,147],
+             f: []},
+            {n: [,,,,,,,,,,,,,,,,,,,,,,,,,,147,147,,147,147],
+             f: []}
+          ]
+        },
+        { // Instrument 5
+          i: [
+          3, // OSC1_WAVEFORM
+          61, // OSC1_VOL
+          116, // OSC1_SEMI
+          0, // OSC1_XENV
+          3, // OSC2_WAVEFORM
+          132, // OSC2_VOL
+          128, // OSC2_SEMI
+          2, // OSC2_DETUNE
+          0, // OSC2_XENV
+          0, // NOISE_VOL
+          13, // ENV_ATTACK
+          6, // ENV_SUSTAIN
+          107, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          0, // LFO_WAVEFORM
+          0, // LFO_AMT
+          0, // LFO_FREQ
+          0, // LFO_FX_FREQ
+          2, // FX_FILTER
+          12, // FX_FREQ
+          0, // FX_RESONANCE
+          8, // FX_DIST
+          81, // FX_DRIVE
+          109, // FX_PAN_AMT
+          6, // FX_PAN_FREQ
+          96, // FX_DELAY_AMT
+          6 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,,,,,,,,,1,2,3,4,1,2,3,4,1,2,3,4,5],
+          // Columns
+          c: [
+            {n: [159,,,,,,,,,,,,,,,,157,,,,,,,,156,,,,,,150,,171],
+             f: []},
+            {n: [147],
+             f: []},
+            {n: [162,,,,,,,,,,,,,,,,157,,,,,,,,153,,,,,,150],
+             f: []},
+            {n: [145,,,,,,,,,,,,,,,,,,,,,,,,157,,,,169],
+             f: []},
+            {n: [135,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,123],
+             f: []}
+          ]
+        },
+        { // Instrument 6
+          i: [
+          3, // OSC1_WAVEFORM
+          0, // OSC1_VOL
+          127, // OSC1_SEMI
+          0, // OSC1_XENV
+          3, // OSC2_WAVEFORM
+          68, // OSC2_VOL
+          127, // OSC2_SEMI
+          0, // OSC2_DETUNE
+          1, // OSC2_XENV
+          218, // NOISE_VOL
+          4, // ENV_ATTACK
+          4, // ENV_SUSTAIN
+          40, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          1, // LFO_WAVEFORM
+          55, // LFO_AMT
+          4, // LFO_FREQ
+          1, // LFO_FX_FREQ
+          2, // FX_FILTER
+          67, // FX_FREQ
+          115, // FX_RESONANCE
+          124, // FX_DIST
+          190, // FX_DRIVE
+          67, // FX_PAN_AMT
+          6, // FX_PAN_FREQ
+          39, // FX_DELAY_AMT
+          1 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,,,,,,,,,,,,3,1,1,1,2,1,1,1,2,1,1,1,2],
+          // Columns
+          c: [
+            {n: [,,,,147,,,,,,,,147,,,,,,,,147,,,,,,,,147],
+             f: []},
+            {n: [,,,,147,,,,,,,,147,,,,,,,,147,,,,159,159,,,147,,,147],
+             f: []},
+            {n: [,,,,,,,,,,,,,,,,,,,,,,,,159,159,,,147,,,147],
+             f: []}
+          ]
+        },
+        { // Instrument 7
+          i: [
+          0, // OSC1_WAVEFORM
+          192, // OSC1_VOL
+          128, // OSC1_SEMI
+          0, // OSC1_XENV
+          0, // OSC2_WAVEFORM
+          192, // OSC2_VOL
+          140, // OSC2_SEMI
+          18, // OSC2_DETUNE
+          0, // OSC2_XENV
+          216, // NOISE_VOL
+          107, // ENV_ATTACK
+          115, // ENV_SUSTAIN
+          138, // ENV_RELEASE
+          0, // ARP_CHORD
+          0, // ARP_SPEED
+          1, // LFO_WAVEFORM
+          136, // LFO_AMT
+          6, // LFO_FREQ
+          1, // LFO_FX_FREQ
+          2, // FX_FILTER
+          8, // FX_FREQ
+          92, // FX_RESONANCE
+          27, // FX_DIST
+          32, // FX_DRIVE
+          148, // FX_PAN_AMT
+          5, // FX_PAN_FREQ
+          85, // FX_DELAY_AMT
+          8 // FX_DELAY_TIME
+          ],
+          // Patterns
+          p: [,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,1,2],
+          // Columns
+          c: [
+            {n: [111,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,130],
+             f: []},
+            {n: [],
+             f: []}
+          ]
+        },
+      ],
+      rowLen: 6300,   // In sample lengths
+      patternLen: 32,  // Rows per pattern
+      endPattern: 30,  // End pattern
+      numChannels: 8  // Number of channels
+    };
+
+
+ var player = new CPlayer();
+  player.init(song);
+  // Generate music...
+  var done = false;
+  setInterval(function () {
+    if (done) {
+      return;
+    }
+    done = player.generate() >= 1;
+    if (done) {
+      // Put the generated song in an Audio element.
+      var wave = player.createWave();
+      var audio = document.createElement("audio");
+      audio.src = URL.createObjectURL(new Blob([wave], {type: "audio/wav"}));
+      audio.play();
+    }
+  }, 100);
+
 // Pasted SFXR
 function SfxrParams(){this.setSettings=function(t){for(var r=0;24>r;r++)this[String.fromCharCode(97+r)]=t[r]||0;this.c<.01&&(this.c=.01);var e=this.b+this.c+this.e;if(.18>e){var a=.18/e;this.b*=a,this.c*=a,this.e*=a}}}function SfxrSynth(){this.a=new SfxrParams;var t,r,e,a,s,n,i,h,f,c,o,v;this.reset=function(){var t=this.a;a=100/(t.f*t.f+.001),s=100/(t.g*t.g+.001),n=1-t.h*t.h*t.h*.01,i=-t.i*t.i*t.i*1e-6,t.a||(o=.5-t.n/2,v=5e-5*-t.o),h=1+t.l*t.l*(t.l>0?-.9:10),f=0,c=1==t.m?0:(1-t.m)*(1-t.m)*2e4+32},this.totalReset=function(){this.reset();var a=this.a;return t=a.b*a.b*1e5,r=a.c*a.c*1e5,e=a.e*a.e*1e5+12,3*((t+r+e)/3|0)},this.synthWave=function(u,b){var w=this.a,y=1024,g=1!=w.s||w.v,k=w.v*w.v*.1,S=1+3e-4*w.w,l=w.s*w.s*w.s*.1,m=1+1e-4*w.t,d=1!=w.s,x=w.x*w.x,A=w.g,q=w.q||w.r,M=w.r*w.r*w.r*.2,p=w.q*w.q*(w.q<0?-1020:1020),U=w.p?((1-w.p)*(1-w.p)*2e4|0)+32:0,j=w.d,C=w.j/2,P=w.k*w.k*.01,R=w.a,W=t,z=1/t,B=1/r,D=1/e,E=5/(1+w.u*w.u*20)*(.01+l);E>.8&&(E=.8),E=1-E;var F,G,H,I,J,K,L,N=!1,O=0,Q=0,T=0,V=0,X=0,Y=0,Z=0,$=0,_=0,tt=0,rt=new Array(y),et=new Array(32);for(L=rt.length;L--;)rt[L]=0;for(L=et.length;L--;)et[L]=2*Math.random()-1;for(L=0;b>L;L++){if(N)return L;if(U&&++_>=U&&(_=0,this.reset()),c&&++f>=c&&(c=0,a*=h),n+=i,a*=n,a>s&&(a=s,A>0&&(N=!0)),G=a,C>0&&(tt+=P,G*=1+Math.sin(tt)*C),G|=0,8>G&&(G=8),R||(o+=v,0>o?o=0:o>.5&&(o=.5)),++Q>W)switch(Q=0,++O){case 1:W=r;break;case 2:W=e}switch(O){case 0:T=Q*z;break;case 1:T=1+2*(1-Q*B)*j;break;case 2:T=1-Q*D;break;case 3:T=0,N=!0}q&&(p+=M,H=0|p,0>H?H=-H:H>y-1&&(H=y-1)),g&&S&&(k*=S,1e-5>k?k=1e-5:k>.1&&(k=.1)),K=0;for(var at=8;at--;){if(Z++,Z>=G&&(Z%=G,3==R))for(var st=et.length;st--;)et[st]=2*Math.random()-1;switch(R){case 0:J=o>Z/G?.5:-.5;break;case 1:J=1-Z/G*2;break;case 2:I=Z/G,I=6.28318531*(I>.5?I-1:I),J=1.27323954*I+.405284735*I*I*(0>I?1:-1),J=.225*((0>J?-1:1)*J*J-J)+J;break;case 3:J=et[Math.abs(32*Z/G|0)]}g&&(F=Y,l*=m,0>l?l=0:l>.1&&(l=.1),d?(X+=(J-Y)*l,X*=E):(Y=J,X=0),Y+=X,V+=Y-F,V*=1-k,J=V),q&&(rt[$%y]=J,J+=rt[($-H+y)%y],$++),K+=J}K*=.125*T*x,u[L]=K>=1?32767:-1>=K?-32768:32767*K|0}return b}}var synth=new SfxrSynth;window.jsfxr=function(t){synth.a.setSettings(t);var r=synth.totalReset(),e=new Uint8Array(4*((r+1)/2|0)+44),a=2*synth.synthWave(new Uint16Array(e.buffer,44),r),s=new Uint32Array(e.buffer,0,44);s[0]=1179011410,s[1]=a+36,s[2]=1163280727,s[3]=544501094,s[4]=16,s[5]=65537,s[6]=44100,s[7]=88200,s[8]=1048578,s[9]=1635017060,s[10]=a,a+=44;for(var n=0,i="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",h="data:audio/wav;base64,";a>n;n+=3){var f=e[n]<<16|e[n+1]<<8|e[n+2];h+=i[f>>18]+i[f>>12&63]+i[f>>6&63]+i[63&f]}return h};
 
