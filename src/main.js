@@ -568,7 +568,7 @@ class Explosion {
       // Growing ball of fire
       var segmentProgress = progress / cut;
       var size = this.s0 + segmentProgress * (this.sf-this.s0);
-      c.fillStyle = '#ffff00';
+      c.fillStyle = '#eecc00';
       c.beginPath();
       c.arc(this.x,this.y,size,0,Math.PI*2,true);
       c.fill();
@@ -576,7 +576,7 @@ class Explosion {
       // Fading fire
       var segmentProgress = (progress - cut) / (1 - cut);
       var size = segmentProgress * this.sf;
-      c.fillStyle = '#ffff00';
+      c.fillStyle = '#bb9900';
       c.beginPath();
       c.arc(this.x,this.y,this.sf,0,Math.PI*2,true);
       c.arc(this.x,this.y,size,0,Math.PI*2,false);
