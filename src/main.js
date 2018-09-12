@@ -324,6 +324,8 @@ function renderUI(c) {
   renderScore(c, 50, 550, p1.scoreArray)
   Renderer.render(c,a.scoreBack,530,600,NS*2.5);
   renderScore(c, 600, 550, p2.scoreArray)
+
+  renderScore(c, 380, 50, waveArray)
 }
 
 var ef = { // Enemy Factory
@@ -664,8 +666,20 @@ p2.keys=[56,50,52,54,48]; //Numpad
 
 // Enemy Waves
 
-
 var wave = 1;
+
+var waveArray = [];
+function updateWaveArray() {
+  waveArray = [];
+  var ss = '0000000'+(Math.floor(wave / 10)+1);
+  ss = ss.substr(ss.length - 2)
+  for (var i = 0, len = ss.length; i < len; i += 1) {
+    waveArray.push(+ss.charAt(i));
+  }
+}
+
+updateWaveArray();
+
 // Generate a new wave every 5 seconds
 timers.push([()=>newWave(), 5]);
 
@@ -689,6 +703,7 @@ function newWave(){
       break;
   }
   wave++;
+  updateWaveArray();
   timers.push([()=>newWave(), 5]);
 }
 
