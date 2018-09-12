@@ -153,12 +153,13 @@ const Renderer = {
 
 // Mob classes
 
+var mobDestroyed = false;
 class Mob {
   constructor(app, lists) {
     this.app = a[app];
     this.dx = this.dy = this.ax = this.ay = 0;
     this.turnScale = 0;
-    lists.push(mobs);
+    mobs.push(this);
     lists.forEach(l => l.push(this));
     this.lists = lists;
     this.ch = [];
@@ -174,7 +175,8 @@ class Mob {
   destroy() {
     this.app = false;
     this.dead = true;
-    this.lists.forEach(l => l.splice(l.indexOf(this), 1));
+    mobDestroyed = true;
+    //this.lists.forEach(l => l.splice(l.indexOf(this), 1));
     this.ch.forEach(c => c.destroy());
   }
 
@@ -275,6 +277,17 @@ raf(function(d) {
       m.destroy();
     }
   }))
+
+  if (mobDestroyed){
+    mobs.filter(m => m.dead == true).forEach(m => {
+      m.lists.forEach(l => l.splice(l.indexOf(m), 1));
+    });
+    //console.log(mobs.filter(m => m.dead == true).length+" dead mobs")
+    mobDestroyed = false;
+    mobs = mobs.filter(m => m.dead === undefined);
+    //console.log(mobs.length+" alive mobs")
+  }
+
   sfx.forEach(s => {
     s.update(d);
     s.render(ctx);
@@ -686,7 +699,6 @@ timers.push([()=>newWave(), 5]);
 function newWave(){
   // Check at least one player alive
   if (!players.filter(p=>!p.dead).length) {
-    console.log("Game over");
     return;
   }
   var type = rands.range(0, 10);
