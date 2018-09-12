@@ -369,23 +369,23 @@ var ef = { // Enemy Factory
     e.react();
     return e;
   },
-  c(id,l,y) { // Cruising from one side to the other
+  c(id,l,y,lv) { // Cruising from one side to the other
     var d = this.defs[id];
     var x = l?(W+d.size):-d.size;
-    var e = this.b(id,x,y,d.sp*(l?-1:1),0);
+    var e = this.b(id,x,y,d.sp*(l?-1:1),0,lv);
     e.kor = !l;
     e.kol = l;
   },
-  a(id,x) { // Coming from above
+  a(id,x,lv) { // Coming from above
     var d = this.defs[id];
-    this.b(id,x,-100,0,d.sp)
+    this.b(id,x,-100,0,d.sp,lv)
   },
-  f(id,n,x,w) { // Horizontal Formation
+  f(id,n,x,w,lv) { // Horizontal Formation
     var d = this.defs[id];
     var ix=x-w/2;
-    var is=w/n;
+    var is=w/(n-1);
     for (var i = 0; i < n; i++) {
-      this.b(id,ix+i*is,-100,0,d.sp)
+      this.b(id,ix+i*is,-100,0,d.sp,lv)
     }
   }
 }
@@ -689,17 +689,24 @@ function newWave(){
     console.log("Game over");
     return;
   }
-  var type = rands.range(0, 3);
+  var type = rands.range(0, 10);
   var diff = Math.floor(wave/10)+1;
+  diff = wave + 1; // Test
   switch (type) {
     case 0: // Formation
-      ef.f('d',rands.range(1,diff),W/2,600);
-      break;
     case 1: // Cruiser
-      ef.c('c',rands.b(),rands.range(100,H-100))
+      ef.f('d',rands.range(2,diff+2),W/2,rands.range(400,600),diff);
       break;
-    case 2: // Platform
-      ef.a('p',rands.range(100,W-100)); // First platform
+    case 2: // Cruiser
+    case 3: // Cruiser
+    case 4: // Cruiser
+    case 5: // Cruiser
+    case 6: // Cruiser
+      ef.c('c',rands.b(),rands.range(100,H-100),diff)
+      break;
+    case 8: // Platform
+    case 9: // Platform
+      ef.a('p',rands.range(100,W-100),diff);
       break;
   }
   wave++;
