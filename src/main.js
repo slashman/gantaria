@@ -344,10 +344,10 @@ function renderUI(c) {
 var ef = { // Enemy Factory
   i(){
     this.defs={
-      d: {ap:'e1',hp:20,sp:50,sc:100,size:15}, // Crasher coming down in formation
-      c: {ap:'enemyFighter',hp:5,sp:200,sc:500,fp:true,size:15,scale:4}, // Cruises the screen shooting at player
+      d: {ap:'e1',hp:10,sp:50,sc:100,size:15}, // Crasher coming down in formation
+      c: {ap:'enemyFighter',hp:1,sp:200,sc:500,fp:true,size:15,scale:4}, // Cruises the screen shooting at player
       p: {ap:'platform',hp:1,sp:20,sc:0,size:80,scale:25,t:[[2,-1],[2,1]],transparent:true}, // Turret platform
-      t: {ap:'e1',hp:40,sp:0,sc:200,fp:true,size:15}, // Turret
+      t: {ap:'e1',hp:5,sp:0,sc:200,fp:true,size:15}, // Turret
     }
   },
   b(id,x,y,dx,dy,lv=1){
@@ -356,16 +356,17 @@ var ef = { // Enemy Factory
     if (!d.transparent) {
       groups.push(enemies);
     }
-    var e = new Enemy(d.hp,d.ap,groups);
+    var hp = d.hp + d.hp * (lv / 2);
+    var e = new Enemy(hp,d.ap,groups);
     e.x = x;
     e.y = y;
     e.dy = dy;
     e.dx = dx;
     e.score = d.sc;
-    e.reactionTime = d.rt || 2000;
-    e.reactionTime -= lv * 200;
-    if (e.reactionTime < 200) {
-      e.reactionTime = 200;
+    e.reactionTime = d.rt || 10000;
+    e.reactionTime -= lv * 2000;
+    if (e.reactionTime < 1000) {
+      e.reactionTime = 1000;
     }
     e.fireAtPlayer = d.fp;
     e.size = d.size;
@@ -703,7 +704,7 @@ function newWave(){
   }
   var type = rands.range(0, 10);
   var diff = Math.floor(wave/10)+1;
-  diff = wave + 1; // Test
+  //diff = wave + 1; // Test
   switch (type) {
     case 0: // Formation
     case 1: // Cruiser
