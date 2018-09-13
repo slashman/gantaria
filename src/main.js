@@ -953,7 +953,7 @@ function renderUI(c) {
     c.font = "30px Arial";
     c.fillStyle= "#00ff00";
     c.fillText("GAME OVER",W/2,300);
-    c.fillText("Press Enter to restart",W/2,500);
+    c.fillText("Press Enter to restart",W/2,350);
   }
 }
 
@@ -1085,7 +1085,7 @@ class Ship extends Mob {
     if (this.scale > shipScale) {
       return;
     }
-    var P = 300;
+    var P = 500;
     this.ay = 0;
     this.ax = 0;
     if (isDown(this.keys[0])){ // Rise
