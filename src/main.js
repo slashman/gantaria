@@ -655,8 +655,8 @@ function keyPress(e){
     typedCallbacks[e.which]();
   }
 }
-window.onkeydown = e => pressed[e.which] = true;
-window.onkeyup = e => pressed[e.which] = false;
+window.onkeydown = e => pressed[e.code] = true;
+window.onkeyup = e => pressed[e.code] = false;
 window.addEventListener("keypress", keyPress);
 window.addEventListener("keydown", e => {if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) e.preventDefault();});
 function isDown(keyCode){
@@ -1360,8 +1360,10 @@ function startGame() {
     return p;
   }
 
-  p1 = createShip('ship', W / 2 - 100, [87,83,65,68,32]);
-  p2 = createShip('ship2', W / 2 + 100, [56,53,52,54,48]);
+  /*p1 = createShip('ship', W / 2 - 100, [87,83,65,68,32]);
+  p2 = createShip('ship2', W / 2 + 100, [56,53,52,54,48]);*/
+  p1 = createShip('ship', W / 2 - 100, ['KeyW','KeyS','KeyA','KeyD','Space' ]);
+  p2 = createShip('ship2', W / 2 + 100, ['Numpad8','Numpad5','Numpad4','Numpad6','Numpad0']);
   //p1.keys=[38,37,39,32]; //Arrow keys
   timers.push([()=>newWave(), 5]);
 }
