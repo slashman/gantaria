@@ -1154,6 +1154,18 @@ var ef = { // Enemy Factory
     for (var i = 0; i < n; i++) {
       this.b(id,ix+i*is,y,d.sp*(left?-1:1),0,lv)
     }
+  },
+  vrow(id,top,x,n,lv) {
+    var d = this.defs[id];
+    var is = -(d.size + 20);
+    var iy= n*is - 100;
+    if (!top) {
+      iy = H + 100;
+      is *= -1;
+    }
+    for (var i = 0; i < n; i++) {
+      this.b(id,x,iy+i*is,0,d.sp*(top?1:-1),lv)
+    }
   }
 }
 ef.i();
@@ -1467,6 +1479,7 @@ function newWave(){
   //diff = wave + 1; // Test
   switch (type) {
     case 0: // Formation
+      ef.vrow('d',rands.b(),rands.range(100,W-100),diff*2,diff);
     case 1: // Cruiser
       ef.f('d',rands.range(2,diff+2),W/2,rands.range(400,600),diff);
       break;
@@ -1484,6 +1497,7 @@ function newWave(){
       ef.vertical('p',rands.b(),rands.range(100,W-100),diff);
       break;
   }
+  
   wave++;
   updateWaveArray();
   timers.push([()=>newWave(), 5]);
