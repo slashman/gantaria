@@ -584,14 +584,15 @@ setInterval(function () {
 // Sound
 let sounds = [
   // Explosion
-  [3,,0.1179,0.6428,0.4267,0.7061,,-0.3837,,,,,,,,,,,1,,,,,0.5],
-  [1,,0.1158,0.1299,0.2666,0.5234,0.0722,-0.4074,,,,,,0.8704,-0.5509,,,,1,,,0.2165,,0.5]
+  [3,,0.1179,0.6428,0.4267,0.7061,,-0.3837,,,,,,,,,,,1,,,,,0.5], // Explosion
+  [1,,0.1158,0.1299,0.2666,0.5234,0.0722,-0.4074,,,,,,0.8704,-0.5509,,,,1,,,0.2165,,0.5],
+  [3,,0.1427,0.2909,0.2542,0.2349,,-0.2076,,,,-0.3384,0.7392,,,,,,1,,,,,0.5], // Missile
 ];
 
 var BS = 5;
 sounds = sounds.map(a=>jsfxr(a)).map(j=>[...Array(BS).keys()].map(()=>new Audio(j)));
 let playing = {};
-let curr = [0,0];
+let curr = [0,0,0];
 function playSound(i){
   if (playing[i]){
     return;
@@ -1104,16 +1105,21 @@ class Ship extends Mob {
     }
   }
   fire() {
-    var b = new Mob('bullet', [layers[1]]);
+    if (this.fireBlocked) {
+      return;
+    }
+    this.fireBlocked = true;
+    setTimeout(() => this.fireBlocked = false, 100);
+    var b = new Mob('missile', [layers[1]]);
     b.x = this.x;
     b.y = this.y;
     b.dy = -rand.range(550, 600);
     b.size = 5;
     b.hits = 'e'; // Enemy
     b.kot = true;
-    b.scale = 1;
+    b.scale = 4;
     b.player = this;
-    playSound(1);
+    playSound(2);
   }
   destroyed(m) {
     this.score += m.score;
@@ -1293,6 +1299,11 @@ const a = { // Appearances
     'o','#33ff33','p',2,0,2,-4,4,0,4,2,'f',
     'o','#888888','v',0,0,1,3,'f',
     'o','#000033','v',0,0,1,2,'f',
+  ],
+  missile: [
+    '#ff3333','p',0,1,1.5,3.5,0,3.5,'f',
+    'o','#eecc00','p',0,4,0.7,4,0.85,4.5,0,5,'f',
+    'o','#dddddd', 'p', 0,0,0.5,1,0.5,4,0,4,'f',
   ],
   star1: [WH,'c',1],
   star2: [WH,'c',2],
