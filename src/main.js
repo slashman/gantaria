@@ -1049,7 +1049,7 @@ class Ship extends Mob {
   u(d) {
     super.u(d);
     if (this.scale > shipScale) {
-      this.scale -= (d * 8);
+      this.scale -= (d * 24);
       return;
     }
     this.scale = shipScale;
@@ -1337,12 +1337,12 @@ function startGame() {
   function createShip(a,x,k){
     var p = new Ship(a, [players, layers[2]]);
     p.x = x;
-    p.y = H + 70;
-    p.dy = -70;
+    p.y = H + 120;
+    p.dy = -200;
     p.size = 20;
     p.score = 0;
     p.updateScoreArray();
-    p.scale = 20;
+    p.scale = 10;
     p.keys=k;
     return p;
   }
