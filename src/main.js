@@ -1,4 +1,4 @@
-/* -*- mode: javascript; tab-width: 4; indent-tabs-mode: nil; -*-
+/* 
 *
 * Copyright (c) 2011-2013 Marcus Geelnard
 *
@@ -1117,18 +1117,23 @@ var ef = { // Enemy Factory
       });
     }
     e.react();
+
+    this.kob = dy > 0;
+    this.kot = dy < 0;
+    this.kol = dx < 0;
+    this.kor = dx > 0;
     return e;
   },
-  c(id,l,y,lv) { // Cruising from one side to the other
+  horizontal(id,l,y,lv) {
     var d = this.defs[id];
     var x = l?(W+d.size):-d.size;
     var e = this.b(id,x,y,d.sp*(l?-1:1),0,lv);
     e.kor = !l;
     e.kol = l;
   },
-  a(id,x,lv) { // Coming from above
+  vertical(id,top,x,lv) {
     var d = this.defs[id];
-    this.b(id,x,-100,0,d.sp,lv)
+    this.b(id,x,top?-100:H+100,0,top?d.sp:-d.sp,lv)
   },
   f(id,n,x,w,lv) { // Horizontal Formation
     var d = this.defs[id];
@@ -1239,7 +1244,6 @@ class Enemy extends Mob {
     super(app, lists);
     this.hp = hp;
     this.reactionTime = reactionTime;
-    this.kob = true; // TODO: Reverse logic for enemies flying upwards
   }
 
   nearestPlayer() {
@@ -1457,24 +1461,17 @@ function newWave(){
     case 2: // Cruiser
     case 3: // Cruiser
     case 4: // Cruiser
+      ef.vertical('c',rands.b(),rands.range(100,W-100),diff)
     case 5: // Cruiser
     case 6: // Cruiser
-      ef.c('c',rands.b(),rands.range(100,H-100),diff)
+      ef.horizontal('c',rands.b(),rands.range(100,H-100),diff)
       break;
     case 8: // Platform
     case 9: // Platform
-      ef.a('p',rands.range(100,W-100),diff);
+      ef.vertical('p',rands.b(),rands.range(100,W-100),diff);
       break;
   }
   wave++;
   updateWaveArray();
   timers.push([()=>newWave(), 5]);
 }
-
-// Music
-/*function playMusic(){
-  with(new AudioContext)[8,9,11,13,13,15,15,15,16,16,16,16,18,18,18,20,20,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24].map((v,i)=>{with(createOscillator())v&&start(e=[17,16,15,11,14,7,10,13,3,6,9,12,2,5,8,1,4,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17][i]/5,connect(destination),frequency.value=988/1.06**v,type='sawtooth',)+stop(e+.2)})
-}
-
-playMusic();
-setInterval(()=>playMusic(),4000);*/
