@@ -1348,7 +1348,7 @@ function startGame() {
   }
 
   p1 = createShip('ship', W / 2 - 100, [87,83,65,68,32]);
-  p2 = createShip('ship2', W / 2 + 100, [56,50,52,54,48]);
+  p2 = createShip('ship2', W / 2 + 100, [56,53,52,54,48]);
   //p1.keys=[38,37,39,32]; //Arrow keys
   timers.push([()=>newWave(), 5]);
 }
