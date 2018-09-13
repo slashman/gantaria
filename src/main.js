@@ -971,6 +971,9 @@ var players = [];
 var canvas = document.querySelector('canvas');
 var ctx = canvas.getContext('2d');
 function renderMob(m, flip) {
+  if (m.specialRender) {
+    m.specialRender(ctx);
+  }
   var turnScale = 1;
   if ((m.turnScale > 0 && flip) || (m.turnScale < 0 && !flip)) {
     turnScale = 1 - Math.abs(m.turnScale);
@@ -1334,6 +1337,19 @@ class Star extends Mob {
   }
 }
 
+class Planet extends Mob {
+  specialRender(c) {
+    c.globalAlpha = 1;
+    var grad=c.createLinearGradient(this.x-this.gax,this.y-this.gay,this.x+this.gax,this.y+this.gay);
+    grad.addColorStop(0, this.color1);
+    grad.addColorStop(1, this.color2);
+    c.fillStyle=grad;
+    c.beginPath();
+    c.arc(this.x,this.y,this.size,0,Math.PI*2,true);
+    c.fill();
+  }
+}
+
 class Explosion {
   constructor(s){
     this.sf = s;
@@ -1375,6 +1391,7 @@ class Explosion {
 const WH = '#ffffff';
 const RD = '#ff0000';
 
+
 const a = { // Appearances
   /*ship Half ovals
     'o','#dddddd','vh',0,-6,2.2,2.2,Math.PI/2,Math.PI+Math.PI/2,'f',
@@ -1408,6 +1425,7 @@ const a = { // Appearances
   star1: [WH,'c',1],
   star2: [WH,'c',2],
   star3: [WH,'c',3],
+  planet: ['G1','c',10],
   bullet: [RD,'c',4],
   mine: ['#888888','p',0,-3, 1,-2, 3,-3, 2,-1, 3,0, 2,1, 3,3, 1,2, 0,3, 'f','o','#dd0000','c',1],
   e1: ['#888888','c',15,'o','#dd0000','c',5],
@@ -1476,6 +1494,15 @@ updateWaveArray();
 // Generate a new wave every 5 seconds
 timers.push([()=>newWave(), 5]);
 
+function getRandomColor() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(seeded() * 16)];
+  }
+  return color;
+}
+
 function newWave(){
   // Check at least one player alive
   if (!players.filter(p=>!p.dead).length) {
@@ -1503,6 +1530,21 @@ function newWave(){
     case 9: // Platform
       ef.vertical('p',rands.b(),rands.range(100,W-100),diff);
       break;
+  }
+  if (wave % 20 === 1) {
+    var t = new Planet('planet', [layers[0]]);
+    t.x = rands.range(0, W);
+    t.y = -100;
+    t.dy = 10;
+    t.size = rands.range(2,10);
+    var angle = seeded() * (2 * Math.PI);
+    t.gax = Math.cos(angle) * t.size;
+    t.gay = Math.sin(angle) * t.size;
+    console.log(angle, t.size, t.gax, t.gay)
+    t.color1 = getRandomColor();
+    t.color2 = getRandomColor();
+    t.kob = true;
+    t.scale = 1;
   }
   wave++;
   updateWaveArray();
