@@ -1446,7 +1446,6 @@ const a = { // Appearances
   scoreBack: ['#002200','a',0.7,'p',0,0,4,-12,40,-12,40,0,'f']
 }
 
-
 for (var i = 0; i < 50; i++) {
   var size = rand.range(1, 3);
   var t = new Star('star'+size, [layers[0]]);
@@ -1474,6 +1473,7 @@ function createShip(a,x,k){
 var p1 = createShip('ship', W / 2 - 100, [87,83,65,68,32]);
 var p2 = createShip('ship2', W / 2 + 100, [56,50,52,54,48]);
 //p1.keys=[38,37,39,32]; //Arrow keys
+timers.push([()=>newWave(), 5]);
 
 // Enemy Waves
 
@@ -1491,9 +1491,6 @@ function updateWaveArray() {
 
 updateWaveArray();
 
-// Generate a new wave every 5 seconds
-timers.push([()=>newWave(), 5]);
-
 function getRandomColor() {
   var letters = '0123456789ABCDEF';
   var color = '#';
@@ -1503,37 +1500,47 @@ function getRandomColor() {
   return color;
 }
 
-function newWave(){
-  // Check at least one player alive
-  if (!players.filter(p=>!p.dead).length) {
-    return;
-  }
+function addEnemy(){
   var type = rands.range(0, 10);
   var diff = Math.floor(wave/10)+1;
   //diff = wave + 1; // Test
   switch (type) {
     case 0: // Formation
       ef.vrow('d',rands.b(),rands.range(100,W-100),diff*2,diff);
-    case 1: // Cruiser
-      ef.f('d',rands.range(2,diff+2),W/2,rands.range(400,600),diff);
       break;
-    case 2: // Cruiser
-    case 3: // Cruiser
+    case 1: // Cruiser
       ef.hrow('d',rands.b(),rands.range(100,H-100),diff*2,diff);
-    case 4: // Cruiser
-      ef.vertical('c',rands.b(),rands.range(100,W-100),diff)
-    case 5: // Cruiser
-    case 6: // Cruiser
+      break;
+    case 2:
+      ef.vertical('c',rands.b(),rands.range(100,W-100),diff);
+      break;
+    case 3:
+    case 4:
+    case 5:
       ef.horizontal('c',rands.b(),rands.range(100,H-100),diff)
       break;
-    case 8: // Platform
-    case 9: // Platform
-      ef.vertical('p',rands.b(),rands.range(100,W-100),diff);
+    case 6: // Formation
+    case 7: // 
+    case 8: // 
+    case 9: // 
+      ef.f('d',rands.range(2,diff+2),W/2,rands.range(400,600),diff);
       break;
+  }
+}
+
+function newWave(){
+  // Check at least one player alive
+  if (!players.filter(p=>!p.dead).length) {
+    return;
+  }
+  addEnemy();
+  addEnemy();
+  if (rands.range(0,100) < 20) {
+    ef.vertical('p',rands.b(),rands.range(100,W-100),Math.floor(wave/10)+1);
   }
   if (wave % 20 === 1) {
     var t = new Planet('planet', [layers[0]]);
-    t.x = rands.range(0, W);
+    t.x = rands.range(100, W - 100);
     t.y = -100;
     t.dy = 10;
     t.size = rands.range(2,10);
@@ -1548,5 +1555,5 @@ function newWave(){
   }
   wave++;
   updateWaveArray();
-  timers.push([()=>newWave(), 5]);
+  timers.push([()=>newWave(), 3]);
 }
