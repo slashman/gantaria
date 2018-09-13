@@ -917,17 +917,21 @@ const H = canvas.height;
 
 function renderUI(c) {
   if (gState == 0) {
-    c.font = "30px Arial";
+    c.font = "20px Arial";
     c.fillStyle= "#00ff00";
-    c.fillText("Loading Music",10,50);
+    c.fillText("Loading Music...",10,50);
   } else if (gState == 1) {
-    c.font = "30px Arial";
+    c.font = "20px Arial";
     c.fillStyle= "#00ff00";
-    c.fillText("ArcherFire",300,50);
+    c.fillText("ArcherFire",303,150);
+    c.font = "40px Arial";
+    c.fillText("Duet of Aces",300,185);
     c.font = "30px Arial";
-    c.fillText("Duet of Aces",300,70);
-    c.font = "30px Arial";
-    c.fillText("Press Enter to start",300,100);
+    c.fillStyle= "#ffffff";
+    c.fillText("Press Enter to start",280,400);
+    c.font = "18px Arial";
+    c.fillText("@slashie_ entry for #js13k 2018",280,550);
+    c.fillText("Theme music by Ryan Malm or @ryanmalm", 230,580);
   } else if (gState == 2) {
     Renderer.render(c,a.scoreBack,250,600,NS*2.5,undefined,true);
     renderScore(c, 50, 550, p1.scoreArray)
