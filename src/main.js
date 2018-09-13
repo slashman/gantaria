@@ -587,12 +587,14 @@ let sounds = [
   [3,,0.1179,0.6428,0.4267,0.7061,,-0.3837,,,,,,,,,,,1,,,,,0.5], // Explosion
   [1,,0.1158,0.1299,0.2666,0.5234,0.0722,-0.4074,,,,,,0.8704,-0.5509,,,,1,,,0.2165,,0.5],
   [3,,0.1427,0.2909,0.2542,0.2349,,-0.2076,,,,-0.3384,0.7392,,,,,,1,,,,,0.5], // Missile
+  [3,,0.3314,0.7668,0.64,0.4086,,-0.372,,,,-0.0355,0.8905,,,0.3548,,,1,,,,,0.5], // Super explosion 3
+  [1,,0.27,,0.57,0.22,,0.3404,,,,,,,,0.4458,,,1,,,,,0.5], // Start Game 4
 ];
 
 var BS = 5;
 sounds = sounds.map(a=>jsfxr(a)).map(j=>[...Array(BS).keys()].map(()=>new Audio(j)));
 let playing = {};
-let curr = [0,0,0];
+let curr = [0,0,0,0,0];
 function playSound(i){
   if (playing[i]){
     return;
@@ -763,7 +765,7 @@ class Mob {
 
   collide(m) {
     this.destroy();
-    playSound(0);
+    playSound(3);
     for (var i = 0; i < 10; i++) {
       var e = new Explosion(50);
       e.x = this.x - (this.size / 2) + rand.range(0, this.size);
@@ -1433,10 +1435,18 @@ function newWave(){
   timers.push([()=>newWave(), 3]);
 }
 
+var startingGame = false;
 typed(13, () => {
   if (gState == 1) {
-    startGame();
-    gState = 2;
+    if (startingGame) {
+      return;
+    }
+    startingGame = true;
+    playSound(4);
+    setTimeout(() => {
+      startGame();
+      gState = 2;
+    }, 1500);
   }
 });
 
