@@ -922,16 +922,23 @@ function renderUI(c) {
     c.fillText("Loading Music...",10,50);
   } else if (gState == 1) {
     c.font = "20px Arial";
+    c.textAlign="center"; 
     c.fillStyle= "#00ff00";
-    c.fillText("ArcherFire",303,150);
+    c.fillText("ArcherFire",W/2,100);
     c.font = "40px Arial";
-    c.fillText("Duet of Aces",300,185);
-    c.font = "30px Arial";
-    c.fillStyle= "#ffffff";
-    c.fillText("Press Enter to start",280,400);
+    c.fillText("Duet of Aces",W/2,135);
     c.font = "18px Arial";
-    c.fillText("@slashie_ entry for #js13k 2018",280,550);
-    c.fillText("Theme music by Ryan Malm or @ryanmalm", 230,580);
+    c.fillText("INSTRUCTIONS",W/2,300);
+    c.fillStyle= "#ffffff";
+    c.fillText("Player 1 - WASD + Space",W/2,330);
+    c.fillText("Player 2 - Numpad + 0",W/2,360);
+    c.font = "30px Arial";
+    c.fillStyle= "#00ff00";
+    c.fillText("Press Enter to start",W/2,500);
+    c.fillStyle= "#ffffff";
+    c.font = "18px Arial";
+    c.fillText("Programmed by Santiago Zapata for #js13k 2018",W/2,550);
+    c.fillText("Theme music by Ryan Malm / @ryanmalm", W/2,580);
   } else if (gState == 2) {
     Renderer.render(c,a.scoreBack,250,600,NS*2.5,undefined,true);
     renderScore(c, 50, 550, p1.scoreArray)
