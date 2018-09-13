@@ -1146,10 +1146,9 @@ var ef = { // Enemy Factory
   hrow(id,left,y,n,lv) {
     var d = this.defs[id];
     var is = d.size + 20;
-    var ix= n*is - 100;
+    var ix= -n*is - 100;
     if (left) {
       ix = W + 100;
-      is *= -1;
     }
     for (var i = 0; i < n; i++) {
       this.b(id,ix+i*is,y,d.sp*(left?-1:1),0,lv)
