@@ -1083,10 +1083,10 @@ function renderUI(c) {
 var ef = { // Enemy Factory
   i(){
     this.defs={
-      d: {ap:'mine',hp:10,sp:300,sc:100,scale:5,size:15}, // Crasher coming down in formation
-      c: {ap:'enemyFighter',hp:1,sp:100,sc:500,fp:true,size:15,scale:4}, // Cruises the screen shooting at player
+      d: {ap:'mine',hp:10,sp:300,sc:10,scale:5,size:15}, // Crasher coming down in formation
+      c: {ap:'enemyFighter',hp:1,sp:100,sc:50,fp:true,size:15,scale:4}, // Cruises the screen shooting at player
       p: {ap:'platform',hp:1,sp:20,sc:0,size:80,scale:25,t:[[2,-1],[2,1]],transparent:true}, // Turret platform
-      t: {ap:'e1',hp:5,sp:0,sc:200,fp:true,size:15}, // Turret
+      t: {ap:'e1',hp:5,sp:0,sc:20,fp:true,size:15}, // Turret
     }
   },
   b(id,x,y,dx,dy,lv=1){
