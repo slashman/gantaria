@@ -942,12 +942,18 @@ function renderUI(c) {
     c.font = "18px Arial";
     c.fillText("Programmed by Santiago Zapata for #js13k 2018",W/2,550);
     c.fillText("Theme music by Ryan Malm / @ryanmalm", W/2,580);
-  } else if (gState == 2) {
+  } else if (gState == 2 || gState == 3) {
     Renderer.render(c,a.scoreBack,250,600,NS*2.5,undefined,true);
     renderScore(c, 50, 550, p1.scoreArray)
     Renderer.render(c,a.scoreBack,530,600,NS*2.5);
     renderScore(c, 600, 550, p2.scoreArray)
     renderScore(c, 380, 50, waveArray)
+  } 
+  if (gState == 3) {
+    c.font = "30px Arial";
+    c.fillStyle= "#00ff00";
+    c.fillText("GAME OVER",W/2,300);
+    c.fillText("Press Enter to restart",W/2,500);
   }
 }
 
@@ -1139,8 +1145,7 @@ class Ship extends Mob {
     super.destroy();
     this.dead = true;
     if (!players.filter(p=>!p.dead).length) {
-      themeAudio.pause();
-      return;
+      gameOver();
     }
   }
 }
@@ -1354,7 +1359,6 @@ function startGame() {
 }
 
 // Enemy Waves
-
 var wave = 1;
 var waveArray = [];
 function updateWaveArray() {
@@ -1445,12 +1449,16 @@ typed(13, () => {
     playSound(4);
     setTimeout(() => {
       startGame();
+      startingGame = false;
       gState = 2;
     }, 1500);
+  } else if (gState == 3) {
+    restart();
+    gState = 2;
   }
 });
 
-function title(){
+function stars50(){
   for (var i = 0; i < 50; i++) {
     var size = rand.range(1, 3);
     var t = new Star('star'+size, [layers[0]]);
@@ -1461,5 +1469,29 @@ function title(){
     t.kob = true;
     t.scale = 1;
   }
+}
+
+function title(){
+  stars50();
   gState = 1;
+}
+
+function gameOver() {
+  themeAudio.pause();
+  themeAudio.currentTime = 0
+  gState = 3;
+}
+
+function restart() {
+  seeded = LCG(13312);
+  layers = [[],[],[]];
+  mobs = [];
+  enemies = [];
+  players = [];
+  timers = [];
+  wave = 1;
+  waveArray = [];
+  updateWaveArray();
+  stars50();
+  startGame();
 }
