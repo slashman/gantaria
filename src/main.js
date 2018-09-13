@@ -765,7 +765,7 @@ class Mob {
 
   collide(m) {
     this.destroy();
-    playSound(3);
+    m.destroy();
     for (var i = 0; i < 10; i++) {
       var e = new Explosion(50);
       e.x = this.x - (this.size / 2) + rand.range(0, this.size);
@@ -1130,6 +1130,7 @@ class Ship extends Mob {
     playSound(2);
   }
   destroyed(m) {
+    playSound(3);
     this.score += m.score;
     this.updateScoreArray();
   }
@@ -1142,6 +1143,12 @@ class Ship extends Mob {
     }
   }
   destroy() {
+    if (this.energy > 0) {
+      this.energy--;
+      playSound(0);
+      return;
+    }
+    playSound(3);
     super.destroy();
     this.dead = true;
     if (!players.filter(p=>!p.dead).length) {
@@ -1341,6 +1348,7 @@ function startGame() {
   themeAudio.play();
   function createShip(a,x,k){
     var p = new Ship(a, [players, layers[2]]);
+    p.energy = 2;
     p.x = x;
     p.y = H + 120;
     p.dy = -200;
