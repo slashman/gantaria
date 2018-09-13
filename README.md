@@ -1,4 +1,4 @@
-# Battle for Fantaria Online
+# ArcherFire - Duet of Aces
 
 An entry for js13kgames 2018
 
