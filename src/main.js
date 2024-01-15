@@ -1273,7 +1273,7 @@ function renderUI(c) {
     c.fillText("INSTRUCTIONS",W/2,300);
     c.fillStyle= "#ffffff";
     c.fillText("Player 1 - WASD + Space",W/2,330);
-    c.fillText("Player 2 - Numpad + 0",W/2,360);
+    c.fillText("Player 2 - Arrows + Enter",W/2,360);
     c.font = "30px " + mainFont;
     c.fillStyle= "#00ff00";
     c.fillText("Press Enter to start",W/2,500);
@@ -1713,7 +1713,7 @@ function startGame() {
   /*p1 = createShip('ship', W / 2 - 100, [87,83,65,68,32]);
   p2 = createShip('ship2', W / 2 + 100, [56,53,52,54,48]);*/
   p1 = createShip('ship', W / 2 - 100, ['KeyW','KeyS','KeyA','KeyD','Space' ]);
-  p2 = createShip('ship2', W / 2 + 100, ['Numpad8','Numpad5','Numpad4','Numpad6','Numpad0']);
+  p2 = createShip('ship2', W / 2 + 100, ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter']);
   //p1.keys=[38,37,39,32]; //Arrow keys
   timers.push([()=>newWave(), 5]);
 }
