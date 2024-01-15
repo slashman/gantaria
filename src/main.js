@@ -1258,6 +1258,7 @@ const W = canvas.width;
 const H = canvas.height;
 
 const mainFont = 'Kanit';
+const versionNumber = 'v1.1';
 let settingsCursorLoc = 0;
 
 function renderUI(c) {
@@ -1285,6 +1286,8 @@ function renderUI(c) {
     c.fillText("ArcherFire",W/2,100);
     c.font = "40px " + mainFont;
     c.fillText("Duet of Aces",W/2,135);
+    c.font = "20px " + mainFont;
+    c.fillText(versionNumber,W/2,160);
     c.font = "18px " + mainFont;
     c.fillText("INSTRUCTIONS",W/2,300);
     c.fillStyle= "#ffffff";
