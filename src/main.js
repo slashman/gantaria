@@ -635,6 +635,242 @@ var song = {
   numChannels: 6  // Number of channels
 };
 
+// TODO: Can probably share a lot of instruments and stuff with the main theme
+var titleSong = {
+  songData: [
+    { // Instrument 0
+      i: [
+      3, // OSC1_WAVEFORM
+      194, // OSC1_VOL
+      128, // OSC1_SEMI
+      0, // OSC1_XENV
+      2, // OSC2_WAVEFORM
+      198, // OSC2_VOL
+      128, // OSC2_SEMI
+      3, // OSC2_DETUNE
+      0, // OSC2_XENV
+      0, // NOISE_VOL
+      12, // ENV_ATTACK
+      7, // ENV_SUSTAIN
+      44, // ENV_RELEASE
+      0, // ENV_EXP_DECAY
+      0, // ARP_CHORD
+      0, // ARP_SPEED
+      2, // LFO_WAVEFORM
+      139, // LFO_AMT
+      2, // LFO_FREQ
+      1, // LFO_FX_FREQ
+      2, // FX_FILTER
+      109, // FX_FREQ
+      86, // FX_RESONANCE
+      7, // FX_DIST
+      32, // FX_DRIVE
+      112, // FX_PAN_AMT
+      3, // FX_PAN_FREQ
+      43, // FX_DELAY_AMT
+      2 // FX_DELAY_TIME
+      ],
+      // Patterns
+      p: [1,2,2,5,1,5,1,5,3,4],
+      // Columns
+      c: [
+        {n: [111,,,111,111,111,111,,,111,,,111,,,111,111,111,111,,,111],
+          f: []},
+        {n: [111,,,111,111,111,111,,111,,111,,111,,,111,111,111,111,,111,,111],
+          f: []},
+        {n: [111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111,111],
+          f: []},
+        {n: [111,111,111,111,111,111,111,,111,,111,,111,111,111,111,111,111,111],
+          f: []},
+        {n: [111,111,111,111,111,111,111,111,111,111,111,111,118,118,118,118,118,118,118,118,118,118,118,118],
+          f: []}
+      ]
+    },
+    { // Instrument 1
+      i: [
+      1, // OSC1_WAVEFORM
+      192, // OSC1_VOL
+      128, // OSC1_SEMI
+      0, // OSC1_XENV
+      1, // OSC2_WAVEFORM
+      191, // OSC2_VOL
+      116, // OSC2_SEMI
+      2, // OSC2_DETUNE
+      0, // OSC2_XENV
+      0, // NOISE_VOL
+      6, // ENV_ATTACK
+      22, // ENV_SUSTAIN
+      34, // ENV_RELEASE
+      0, // ENV_EXP_DECAY
+      0, // ARP_CHORD
+      0, // ARP_SPEED
+      0, // LFO_WAVEFORM
+      69, // LFO_AMT
+      3, // LFO_FREQ
+      1, // LFO_FX_FREQ
+      1, // FX_FILTER
+      23, // FX_FREQ
+      167, // FX_RESONANCE
+      0, // FX_DIST
+      32, // FX_DRIVE
+      77, // FX_PAN_AMT
+      6, // FX_PAN_FREQ
+      25, // FX_DELAY_AMT
+      6 // FX_DELAY_TIME
+      ],
+      // Patterns
+      p: [,,,,1,2,1,2,3],
+      // Columns
+      c: [
+        {n: [147,150,154,159,,,162,161,159,154,,,150,152,154,159,158,159,162,161,159,166,164,162],
+          f: []},
+        {n: [164,162,164,161,,,158,159,161,154,,,154,158,161,164,162,164,161,159,161,158,159,161],
+          f: []},
+        {n: [159,154,150,152,150,149,146,147,149,150,149,150,147,142,138,135],
+          f: []}
+      ]
+    },
+    { // Instrument 2
+      i: [
+      3, // OSC1_WAVEFORM
+      146, // OSC1_VOL
+      140, // OSC1_SEMI
+      0, // OSC1_XENV
+      1, // OSC2_WAVEFORM
+      224, // OSC2_VOL
+      128, // OSC2_SEMI
+      3, // OSC2_DETUNE
+      0, // OSC2_XENV
+      0, // NOISE_VOL
+      92, // ENV_ATTACK
+      0, // ENV_SUSTAIN
+      95, // ENV_RELEASE
+      0, // ENV_EXP_DECAY
+      0, // ARP_CHORD
+      0, // ARP_SPEED
+      3, // LFO_WAVEFORM
+      179, // LFO_AMT
+      5, // LFO_FREQ
+      1, // LFO_FX_FREQ
+      2, // FX_FILTER
+      124, // FX_FREQ
+      135, // FX_RESONANCE
+      11, // FX_DIST
+      32, // FX_DRIVE
+      150, // FX_PAN_AMT
+      3, // FX_PAN_FREQ
+      157, // FX_DELAY_AMT
+      6 // FX_DELAY_TIME
+      ],
+      // Patterns
+      p: [1,2,3,8,1,5,3,6,7],
+      // Columns
+      c: [
+        {n: [142,,,,,,,,,,,,135],
+          f: []},
+        {n: [138],
+          f: []},
+        {n: [135,,,,,,,,,,,,138],
+          f: []},
+        {n: [142,,,,,,,,,,,,146],
+          f: []},
+        {n: [137,,,,,,,,,,,,130],
+          f: []},
+        {n: [142,,,,,,,,,,,,146],
+          f: []},
+        {n: [147],
+          f: []},
+        {n: [137,,,,,,,,,,,,130],
+          f: []}
+      ]
+    },
+    { // Instrument 3
+      i: [
+      0, // OSC1_WAVEFORM
+      255, // OSC1_VOL
+      116, // OSC1_SEMI
+      64, // OSC1_XENV
+      0, // OSC2_WAVEFORM
+      255, // OSC2_VOL
+      116, // OSC2_SEMI
+      0, // OSC2_DETUNE
+      64, // OSC2_XENV
+      0, // NOISE_VOL
+      4, // ENV_ATTACK
+      6, // ENV_SUSTAIN
+      67, // ENV_RELEASE
+      0, // ENV_EXP_DECAY
+      0, // ARP_CHORD
+      0, // ARP_SPEED
+      0, // LFO_WAVEFORM
+      0, // LFO_AMT
+      0, // LFO_FREQ
+      0, // LFO_FX_FREQ
+      2, // FX_FILTER
+      14, // FX_FREQ
+      0, // FX_RESONANCE
+      0, // FX_DIST
+      32, // FX_DRIVE
+      0, // FX_PAN_AMT
+      0, // FX_PAN_FREQ
+      0, // FX_DELAY_AMT
+      0 // FX_DELAY_TIME
+      ],
+      // Patterns
+      p: [1,1,1,1,1,1,1,1,1,1],
+      // Columns
+      c: [
+        {n: [123,,,123,,,123,,,123,,,123,,,123,,,123,,,123],
+          f: []}
+      ]
+    },
+    { // Instrument 4
+      i: [
+      0, // OSC1_WAVEFORM
+      97, // OSC1_VOL
+      128, // OSC1_SEMI
+      64, // OSC1_XENV
+      0, // OSC2_WAVEFORM
+      95, // OSC2_VOL
+      128, // OSC2_SEMI
+      0, // OSC2_DETUNE
+      64, // OSC2_XENV
+      117, // NOISE_VOL
+      4, // ENV_ATTACK
+      7, // ENV_SUSTAIN
+      41, // ENV_RELEASE
+      0, // ENV_EXP_DECAY
+      0, // ARP_CHORD
+      0, // ARP_SPEED
+      0, // LFO_WAVEFORM
+      60, // LFO_AMT
+      4, // LFO_FREQ
+      1, // LFO_FX_FREQ
+      2, // FX_FILTER
+      255, // FX_FREQ
+      0, // FX_RESONANCE
+      0, // FX_DIST
+      32, // FX_DRIVE
+      61, // FX_PAN_AMT
+      5, // FX_PAN_FREQ
+      32, // FX_DELAY_AMT
+      2 // FX_DELAY_TIME
+      ],
+      // Patterns
+      p: [,,,,1,1,1,1],
+      // Columns
+      c: [
+        {n: [,,,135,,,,,,135,,,,,,135,,,,,,135],
+          f: []}
+      ]
+    },
+  ],
+  rowLen: 5752,   // In sample lengths
+  patternLen: 24,  // Rows per pattern
+  endPattern: 9,  // End pattern
+  numChannels: 5  // Number of channels
+};
+
 // Pasted SFXR
 function SfxrParams(){this.setSettings=function(t){for(var r=0;24>r;r++)this[String.fromCharCode(97+r)]=t[r]||0;this.c<.01&&(this.c=.01);var e=this.b+this.c+this.e;if(.18>e){var a=.18/e;this.b*=a,this.c*=a,this.e*=a}}}function SfxrSynth(){this.a=new SfxrParams;var t,r,e,a,s,n,i,h,f,c,o,v;this.reset=function(){var t=this.a;a=100/(t.f*t.f+.001),s=100/(t.g*t.g+.001),n=1-t.h*t.h*t.h*.01,i=-t.i*t.i*t.i*1e-6,t.a||(o=.5-t.n/2,v=5e-5*-t.o),h=1+t.l*t.l*(t.l>0?-.9:10),f=0,c=1==t.m?0:(1-t.m)*(1-t.m)*2e4+32},this.totalReset=function(){this.reset();var a=this.a;return t=a.b*a.b*1e5,r=a.c*a.c*1e5,e=a.e*a.e*1e5+12,3*((t+r+e)/3|0)},this.synthWave=function(u,b){var w=this.a,y=1024,g=1!=w.s||w.v,k=w.v*w.v*.1,S=1+3e-4*w.w,l=w.s*w.s*w.s*.1,m=1+1e-4*w.t,d=1!=w.s,x=w.x*w.x,A=w.g,q=w.q||w.r,M=w.r*w.r*w.r*.2,p=w.q*w.q*(w.q<0?-1020:1020),U=w.p?((1-w.p)*(1-w.p)*2e4|0)+32:0,j=w.d,C=w.j/2,P=w.k*w.k*.01,R=w.a,W=t,z=1/t,B=1/r,D=1/e,E=5/(1+w.u*w.u*20)*(.01+l);E>.8&&(E=.8),E=1-E;var F,G,H,I,J,K,L,N=!1,O=0,Q=0,T=0,V=0,X=0,Y=0,Z=0,$=0,_=0,tt=0,rt=new Array(y),et=new Array(32);for(L=rt.length;L--;)rt[L]=0;for(L=et.length;L--;)et[L]=2*Math.random()-1;for(L=0;b>L;L++){if(N)return L;if(U&&++_>=U&&(_=0,this.reset()),c&&++f>=c&&(c=0,a*=h),n+=i,a*=n,a>s&&(a=s,A>0&&(N=!0)),G=a,C>0&&(tt+=P,G*=1+Math.sin(tt)*C),G|=0,8>G&&(G=8),R||(o+=v,0>o?o=0:o>.5&&(o=.5)),++Q>W)switch(Q=0,++O){case 1:W=r;break;case 2:W=e}switch(O){case 0:T=Q*z;break;case 1:T=1+2*(1-Q*B)*j;break;case 2:T=1-Q*D;break;case 3:T=0,N=!0}q&&(p+=M,H=0|p,0>H?H=-H:H>y-1&&(H=y-1)),g&&S&&(k*=S,1e-5>k?k=1e-5:k>.1&&(k=.1)),K=0;for(var at=8;at--;){if(Z++,Z>=G&&(Z%=G,3==R))for(var st=et.length;st--;)et[st]=2*Math.random()-1;switch(R){case 0:J=o>Z/G?.5:-.5;break;case 1:J=1-Z/G*2;break;case 2:I=Z/G,I=6.28318531*(I>.5?I-1:I),J=1.27323954*I+.405284735*I*I*(0>I?1:-1),J=.225*((0>J?-1:1)*J*J-J)+J;break;case 3:J=et[Math.abs(32*Z/G|0)]}g&&(F=Y,l*=m,0>l?l=0:l>.1&&(l=.1),d?(X+=(J-Y)*l,X*=E):(Y=J,X=0),Y+=X,V+=Y-F,V*=1-k,J=V),q&&(rt[$%y]=J,J+=rt[($-H+y)%y],$++),K+=J}K*=.125*T*x,u[L]=K>=1?32767:-1>=K?-32768:32767*K|0}return b}}var synth=new SfxrSynth;window.jsfxr=function(t){synth.a.setSettings(t);var r=synth.totalReset(),e=new Uint8Array(4*((r+1)/2|0)+44),a=2*synth.synthWave(new Uint16Array(e.buffer,44),r),s=new Uint32Array(e.buffer,0,44);s[0]=1179011410,s[1]=a+36,s[2]=1163280727,s[3]=544501094,s[4]=16,s[5]=65537,s[6]=44100,s[7]=88200,s[8]=1048578,s[9]=1635017060,s[10]=a,a+=44;for(var n=0,i="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",h="data:audio/wav;base64,";a>n;n+=3){var f=e[n]<<16|e[n+1]<<8|e[n+2];h+=i[f>>18]+i[f>>12&63]+i[f>>6&63]+i[63&f]}return h};
 
@@ -642,22 +878,37 @@ function SfxrParams(){this.setSettings=function(t){for(var r=0;24>r;r++)this[Str
 
 var gState = 0;
 var themeAudio;
+var titleAudio;
 
 var player = new CPlayer();
 player.init(song);
+var titlePlayer = new CPlayer();
+titlePlayer.init(titleSong);
 // Generate music...
-var done = false;
-setInterval(function () {
-  if (done) {
+var titleDone = false;
+var themeDone = false;
+var loadingMonitor = setInterval(function () {
+  if (themeDone) {
+    clearInterval(loadingMonitor);
+    loadingDone();
     return;
   }
-  done = player.generate() >= 1;
-  if (done) {
-    var wave = player.createWave();
-    themeAudio = document.createElement("audio");
-    themeAudio.loop=true;
-    themeAudio.src = URL.createObjectURL(new Blob([wave], {type: "audio/wav"}));
-    title();
+  if (titleDone) {
+    themeDone = player.generate() >= 1;
+    if (themeDone) {
+      var wave = player.createWave();
+      themeAudio = document.createElement("audio");
+      themeAudio.loop=true;
+      themeAudio.src = URL.createObjectURL(new Blob([wave], {type: "audio/wav"}));
+    }
+  } else {
+    titleDone = titlePlayer.generate() >= 1;
+    if (titleDone) {
+      var wave = titlePlayer.createWave();
+      titleAudio = document.createElement("audio");
+      titleAudio.loop=true;
+      titleAudio.src = URL.createObjectURL(new Blob([wave], {type: "audio/wav"}));
+    }
   }
 }, 100);
 
@@ -1005,6 +1256,10 @@ function renderUI(c) {
     c.font = "20px Arial";
     c.fillStyle= "#00ff00";
     c.fillText("Loading Music...",10,50);
+  } else if (gState == 4) {
+      c.font = "20px Arial";
+      c.fillStyle= "#00ff00";
+      c.fillText("Music Loaded, Press Enter.",10,50);
   } else if (gState == 1) {
     c.font = "20px Arial";
     c.textAlign="center"; 
@@ -1427,6 +1682,8 @@ const a = { // Appearances
 
 var p1,p2;
 function startGame() {
+  titleAudio.pause();
+  titleAudio.currentTime = 0;
   themeAudio.play();
   function createShip(a,x,k){
     var p = new Ship(a, [players, layers[2]]);
@@ -1547,7 +1804,9 @@ typed(13, () => {
   } else if (gState == 3) {
     restart();
     gState = 2;
-  }
+  } else if (gState == 4) {
+    title();
+  } 
 });
 
 function stars50(){
@@ -1563,7 +1822,12 @@ function stars50(){
   }
 }
 
+function loadingDone(){
+  gState = 4;
+}
+
 function title(){
+  titleAudio.play();
   stars50();
   gState = 1;
 }
