@@ -877,6 +877,7 @@ function SfxrParams(){this.setSettings=function(t){for(var r=0;24>r;r++)this[Str
 // --- Initialization
 
 var gState = 0;
+let savedGState = 0;
 var themeAudio;
 var titleAudio;
 
@@ -937,6 +938,7 @@ function playSound(i){
   if (curr[i] == BS){
     curr[i] = 0;
   }
+  player.volume = SFX_VOLUME / 10;
   player.play();
   setTimeout(()=>playing[i]=false, 30);
 }
@@ -990,8 +992,8 @@ function keyPress(e){
 }
 window.onkeydown = e => pressed[e.code] = true;
 window.onkeyup = e => pressed[e.code] = false;
-window.addEventListener("keypress", keyPress);
 window.addEventListener("keydown", e => {if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) e.preventDefault();});
+window.addEventListener("keydown", keyPress);
 function isDown(keyCode){
   return pressed[keyCode];
 };
@@ -1162,6 +1164,12 @@ function renderMob(m, flip) {
 }
 var timers = [];
 raf(function(d) {
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (gState == 5) {
+    renderUI(ctx);
+    return;
+  }
   if (timers.length) {
     timers.forEach(t => {
       t[1] -= d;
@@ -1172,8 +1180,6 @@ raf(function(d) {
     })
     timers = timers.filter(f => !f.d);
   }
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
   layers.forEach(l => l.forEach(m => {
     m.k && m.k(); // TODO this is only for the ship, put it somewhere
     m.u(d);
@@ -1252,6 +1258,7 @@ const W = canvas.width;
 const H = canvas.height;
 
 const mainFont = 'Kanit';
+let settingsCursorLoc = 0;
 
 function renderUI(c) {
   if (gState == 0) {
@@ -1262,6 +1269,15 @@ function renderUI(c) {
       c.font = "20px " + mainFont;
       c.fillStyle= "#00ff00";
       c.fillText("Music Loaded, Press Enter.",10,50);
+  } else if (gState == 5) {
+    c.font = "20px " + mainFont;
+    c.fillStyle= "#00ff00";
+    c.textAlign="left"; 
+    c.fillText("Settings",10,50);
+    c.fillText("--------",10,70);
+    c.fillText("Music Volume: " + (MUSIC_VOLUME * 10) + "%",30,90);
+    c.fillText("SFX Volume: " + (SFX_VOLUME * 10) + "%",30,110);
+    c.fillText(">",10,90 + settingsCursorLoc * 20);
   } else if (gState == 1) {
     c.font = "20px " + mainFont;
     c.textAlign="center"; 
@@ -1274,6 +1290,7 @@ function renderUI(c) {
     c.fillStyle= "#ffffff";
     c.fillText("Player 1 - WASD + Space",W/2,330);
     c.fillText("Player 2 - Arrows + Enter",W/2,360);
+    c.fillText("ESC - Settings",W/2, 390);
     c.font = "30px " + mainFont;
     c.fillStyle= "#00ff00";
     c.fillText("Press Enter to start",W/2,500);
@@ -1631,6 +1648,8 @@ class Explosion {
 const WH = '#ffffff';
 const RD = '#ff0000';
 
+let SFX_VOLUME = 1;
+let MUSIC_VOLUME = 3;
 
 const a = { // Appearances
   /*ship Half ovals
@@ -1695,6 +1714,7 @@ var p1,p2;
 function startGame() {
   titleAudio.pause();
   titleAudio.currentTime = 0;
+  themeAudio.volume = MUSIC_VOLUME / 10;
   themeAudio.play();
   function createShip(a,x,k){
     var p = new Ship(a, [players, layers[2]]);
@@ -1820,6 +1840,71 @@ typed(13, () => {
   } 
 });
 
+typed(27, () => {
+  if (gState == 5) {
+    gState = savedGState;
+  } else {
+    savedGState = gState;
+    gState = 5;
+  }
+});
+
+typed(38, () => {
+  if (gState == 5) {
+    settingsCursorLoc--;
+    if (settingsCursorLoc < 0) {
+      settingsCursorLoc = 0;
+    }
+  }
+});
+
+typed(40, () => {
+  if (gState == 5) {
+    settingsCursorLoc++;
+    if (settingsCursorLoc > 1) {
+      settingsCursorLoc = 1;
+    }
+  }
+});
+
+typed(37, () => {
+  if (gState == 5) {
+    if (settingsCursorLoc == 0) {
+      MUSIC_VOLUME--;
+      if (MUSIC_VOLUME < 0) {
+        MUSIC_VOLUME = 0;
+      }
+    } else {
+      SFX_VOLUME --;
+      if (SFX_VOLUME < 0) {
+        SFX_VOLUME = 0;
+      }
+      playSound(2);
+    }
+    titleAudio.volume = MUSIC_VOLUME / 10;
+    themeAudio.volume = MUSIC_VOLUME / 10;
+  }
+});
+
+typed(39, () => {
+  if (gState == 5) {
+    if (settingsCursorLoc == 0) {
+      MUSIC_VOLUME ++;
+      if (MUSIC_VOLUME > 10) {
+        MUSIC_VOLUME = 10;
+      }
+    } else {
+      SFX_VOLUME ++;
+      if (SFX_VOLUME > 10) {
+        SFX_VOLUME = 10;
+      }
+      playSound(2);
+    }
+    titleAudio.volume = MUSIC_VOLUME / 10;
+    themeAudio.volume = MUSIC_VOLUME / 10;
+  }
+});
+
 function stars50(){
   for (var i = 0; i < 50; i++) {
     var size = rand.range(1, 3);
@@ -1838,6 +1923,7 @@ function loadingDone(){
 }
 
 function title(){
+  titleAudio.volume = MUSIC_VOLUME / 10;
   titleAudio.play();
   stars50();
   gState = 1;
