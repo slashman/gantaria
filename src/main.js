@@ -1251,32 +1251,34 @@ function renderDigit(c, x, y, digit) {
 const W = canvas.width;
 const H = canvas.height;
 
+const mainFont = 'Kanit';
+
 function renderUI(c) {
   if (gState == 0) {
-    c.font = "20px Arial";
+    c.font = "20px " + mainFont;
     c.fillStyle= "#00ff00";
     c.fillText("Loading Music...",10,50);
   } else if (gState == 4) {
-      c.font = "20px Arial";
+      c.font = "20px " + mainFont;
       c.fillStyle= "#00ff00";
       c.fillText("Music Loaded, Press Enter.",10,50);
   } else if (gState == 1) {
-    c.font = "20px Arial";
+    c.font = "20px " + mainFont;
     c.textAlign="center"; 
     c.fillStyle= "#00ff00";
     c.fillText("ArcherFire",W/2,100);
-    c.font = "40px Arial";
+    c.font = "40px " + mainFont;
     c.fillText("Duet of Aces",W/2,135);
-    c.font = "18px Arial";
+    c.font = "18px " + mainFont;
     c.fillText("INSTRUCTIONS",W/2,300);
     c.fillStyle= "#ffffff";
     c.fillText("Player 1 - WASD + Space",W/2,330);
     c.fillText("Player 2 - Numpad + 0",W/2,360);
-    c.font = "30px Arial";
+    c.font = "30px " + mainFont;
     c.fillStyle= "#00ff00";
     c.fillText("Press Enter to start",W/2,500);
     c.fillStyle= "#ffffff";
-    c.font = "18px Arial";
+    c.font = "18px " + mainFont;
     c.fillText("Programmed by Santiago Zapata for #js13k 2018",W/2,550);
     c.fillText("Theme music by Ryan Malm / @ryanmalm", W/2,580);
   } else if (gState == 2 || gState == 3) {
@@ -1287,7 +1289,7 @@ function renderUI(c) {
     renderScore(c, 380, 50, waveArray)
   } 
   if (gState == 3) {
-    c.font = "30px Arial";
+    c.font = "30px " + mainFont;
     c.fillStyle= "#00ff00";
     c.fillText("GAME OVER",W/2,300);
     c.fillText("Press Enter to restart",W/2,350);
