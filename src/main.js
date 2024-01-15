@@ -1287,14 +1287,23 @@ function renderUI(c) {
     Renderer.render(c,a.scoreBack,530,600,NS*2.5);
     renderScore(c, 600, 550, p2.scoreArray)
     renderScore(c, 380, 50, waveArray)
+    c.font = "30px " + mainFont;
+    c.textAlign="left"; 
+    c.fillStyle= "#ffffff";
+    c.fillText(p1.dead ? '' : energyMarks[p1.energy + 1],35,600);
+    c.textAlign="right"; 
+    c.fillText(p2.dead ? '' : energyMarks[p2.energy + 1],800 - 40,600);
   } 
   if (gState == 3) {
     c.font = "30px " + mainFont;
     c.fillStyle= "#00ff00";
+    c.textAlign="center"; 
     c.fillText("GAME OVER",W/2,300);
     c.fillText("Press Enter to restart",W/2,350);
   }
 }
+
+var energyMarks = ['','*','**','***'];
 
 var ef = { // Enemy Factory
   i(){
